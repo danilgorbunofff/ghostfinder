@@ -29,8 +29,24 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired - important for Server Components
-  await supabase.auth.getUser();
+  // IMPORTANT: Do NOT use getSession() — it reads from cookies without
+  // validation. getUser() makes a server call to verify the JWT.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Redirect unauthenticated users accessing protected routes
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith("/login") &&
+    !request.nextUrl.pathname.startsWith("/signup") &&
+    !request.nextUrl.pathname.startsWith("/callback") &&
+    !request.nextUrl.pathname.startsWith("/api")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }

@@ -23,6 +23,14 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-hover: var(--brand-hover);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -67,11 +75,19 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --brand: oklch(0.488 0.243 264.376);
+  --brand-foreground: oklch(0.985 0 0);
+  --brand-muted: oklch(0.488 0.243 264.376 / 10%);
+  --brand-hover: oklch(0.432 0.232 265.2);
+  --success: oklch(0.527 0.154 150.069);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.681 0.162 75.834);
+  --warning-foreground: oklch(0.145 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.527 0.154 150.069);
+  --chart-3: oklch(0.681 0.162 75.834);
+  --chart-4: oklch(0.577 0.245 27.325);
+  --chart-5: oklch(0.439 0 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -102,11 +118,19 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --brand: oklch(0.627 0.265 263.0);
+  --brand-foreground: oklch(0.145 0 0);
+  --brand-muted: oklch(0.627 0.265 263.0 / 15%);
+  --brand-hover: oklch(0.701 0.248 262.0);
+  --success: oklch(0.627 0.194 149.214);
+  --success-foreground: oklch(0.145 0 0);
+  --warning: oklch(0.769 0.189 70.08);
+  --warning-foreground: oklch(0.145 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.527 0.154 150.069);
+  --chart-3: oklch(0.681 0.162 75.834);
+  --chart-4: oklch(0.577 0.245 27.325);
+  --chart-5: oklch(0.439 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -126,5 +150,67 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Gradient text utility for KPI numbers */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--foreground) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Metric number sizing */
+  .text-metric {
+    font-size: 2rem;
+    line-height: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-metric-lg {
+    font-size: 3rem;
+    line-height: 3.25rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes count-up {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes pulse-brand {
+    0%, 100% { box-shadow: 0 0 0 0 var(--brand-muted); }
+    50% { box-shadow: 0 0 0 8px transparent; }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out both;
+  }
+
+  .animate-count-up {
+    animation: count-up 0.6s ease-out both;
+  }
+
+  .animate-pulse-brand {
+    animation: pulse-brand 2s ease-in-out infinite;
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(circle at center, var(--tw-gradient-stops));
   }
 }
