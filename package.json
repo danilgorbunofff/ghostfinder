@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@okta/okta-sdk-nodejs": "^8.0.0",
+    "@stripe/stripe-js": "^9.2.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.2",
+    "googleapis": "^171.4.0",
     "next": "16.2.3",
+    "plaid": "^41.4.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-plaid-link": "^4.1.1",
+    "stripe": "^22.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
