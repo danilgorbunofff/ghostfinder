@@ -1,0 +1,1 @@
+// Vendor name normalization utilities

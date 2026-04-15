@@ -1,0 +1,2 @@
+-- Seed data for local development
+-- Add seed data here as tables are created in later phases
