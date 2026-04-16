@@ -86,6 +86,7 @@ export function VendorFilters({
               placeholder="Search vendors..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
+              data-testid="inventory-search"
               className="pl-9 transition-all focus:ring-2 focus:ring-brand/20"
             />
           </div>
@@ -93,7 +94,7 @@ export function VendorFilters({
           {/* Status filter */}
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+              <Button variant="outline" size="sm" data-testid="inventory-status-filter" className="gap-1.5 shrink-0">
                 <Filter className="h-3.5 w-3.5" />
                 Status
                 {statusFilter !== 'all' && (
@@ -163,7 +164,7 @@ export function VendorFilters({
 
           {/* View toggle */}
           {onViewModeChange && (
-            <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
+            <div data-testid="inventory-view-toggle" className="flex items-center rounded-lg border bg-muted/50 p-0.5">
               <button
                 onClick={() => onViewModeChange('table')}
                 className={`flex items-center justify-center h-7 w-7 rounded-md transition-all ${
@@ -194,6 +195,7 @@ export function VendorFilters({
               size="sm"
               onClick={onExport}
               disabled={totalCount === 0}
+              data-testid="inventory-export"
               className="gap-1.5 shrink-0"
             >
               <Download className="h-3.5 w-3.5" />

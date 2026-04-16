@@ -25,7 +25,7 @@ export function ReportSelector({ reports, currentId }: ReportSelectorProps) {
         router.push(`/reports?reportId=${id}`)
       }}
     >
-      <SelectTrigger className="w-[260px] gap-2">
+      <SelectTrigger className="w-[260px] gap-2" data-testid="report-selector">
         <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <SelectValue placeholder="Select report" />
       </SelectTrigger>

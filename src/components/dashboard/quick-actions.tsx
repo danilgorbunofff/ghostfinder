@@ -9,7 +9,7 @@ interface QuickActionsProps {
 
 export function QuickActions({ hasReport, hasConnections }: QuickActionsProps) {
   return (
-    <div className="flex flex-wrap gap-3 animate-fade-in-up [animation-delay:275ms]">
+    <div className="flex flex-wrap gap-3 animate-fade-in-up [animation-delay:275ms]" data-testid="quick-actions">
       <Button
         variant="outline"
         size="sm"

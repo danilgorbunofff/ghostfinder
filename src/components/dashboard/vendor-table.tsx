@@ -142,7 +142,7 @@ export function VendorTable({ vendors, totalSpend, onVendorClick }: VendorTableP
   }
 
   return (
-    <Table>
+    <Table data-testid="vendor-table">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <SortHeader label="Vendor" column="name" />
@@ -157,6 +157,7 @@ export function VendorTable({ vendors, totalSpend, onVendorClick }: VendorTableP
         {sorted.map((vendor, index) => (
           <TableRow
             key={vendor.name}
+            data-testid="vendor-row"
             className={`group/row animate-fade-in-up transition-colors hover:bg-brand-muted/30 border-l-2 hover:border-l-brand cursor-pointer ${getRowStatusClass(vendor.status)}`}
             style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
             onClick={() => onVendorClick?.(vendor)}

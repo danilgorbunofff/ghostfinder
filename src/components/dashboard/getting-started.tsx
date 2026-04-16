@@ -28,6 +28,7 @@ export function GettingStarted({
       done: hasBankConnection,
       href: '/connections',
       icon: Building2,
+      testId: 'step-bank-connection',
     },
     {
       label: 'Connect an identity provider',
@@ -35,6 +36,7 @@ export function GettingStarted({
       done: hasIdentityProvider,
       href: '/connections',
       icon: Shield,
+      testId: 'step-identity-provider',
     },
     {
       label: 'Generate your first waste report',
@@ -42,6 +44,7 @@ export function GettingStarted({
       done: hasWasteReport,
       href: '/reports',
       icon: Scan,
+      testId: 'step-waste-report',
     },
   ]
 
@@ -56,7 +59,7 @@ export function GettingStarted({
   if (completedCount === 3) return null
 
   return (
-    <Card className="relative overflow-hidden border-0 animate-fade-in-up bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 dark:from-blue-700 dark:via-indigo-700 dark:to-violet-800 shadow-lg shadow-indigo-500/10">
+    <Card data-testid="getting-started" className="relative overflow-hidden border-0 animate-fade-in-up bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 dark:from-blue-700 dark:via-indigo-700 dark:to-violet-800 shadow-lg shadow-indigo-500/10">
       {/* Ghost watermarks scattered across entire card */}
       <Ghost className="absolute -right-6 -top-6 h-36 w-36 text-white/[0.06] rotate-12 pointer-events-none" />
       <Ghost className="absolute right-24 top-10 h-14 w-14 text-white/[0.04] -rotate-6 pointer-events-none" />
@@ -112,6 +115,7 @@ export function GettingStarted({
               return (
                 <div
                   key={step.label}
+                  data-testid={step.testId}
                   className={`group/step flex items-center gap-4 rounded-xl border p-3.5 transition-all duration-200 ${
                     step.done
                       ? 'bg-white/5 border-white/10 opacity-60'

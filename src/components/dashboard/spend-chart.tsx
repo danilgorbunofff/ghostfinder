@@ -50,7 +50,7 @@ export function SpendChart({ totalSpend }: SpendChartProps) {
   const data = generateMonthlyData(totalSpend)
 
   return (
-    <Card className="card-interactive animate-fade-in-up [animation-delay:300ms] overflow-hidden">
+    <Card className="card-interactive animate-fade-in-up [animation-delay:300ms] overflow-hidden" data-testid="spend-chart">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>

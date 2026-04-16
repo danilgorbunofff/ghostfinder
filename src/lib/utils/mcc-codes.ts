@@ -21,7 +21,7 @@ export const KNOWN_SAAS_VENDORS: Record<string, {
   slack: {
     displayName: 'Slack',
     category: 'Communication',
-    patterns: ['slack', 'slack technologies'],
+    patterns: ['slack', 'slack technologies', 'slack technologies ltd'],
   },
   zoom: {
     displayName: 'Zoom',
@@ -31,12 +31,12 @@ export const KNOWN_SAAS_VENDORS: Record<string, {
   adobe: {
     displayName: 'Adobe',
     category: 'Design & Creative',
-    patterns: ['adobe', 'adobe systems', 'adobe inc'],
+    patterns: ['adobe', 'adobe systems', 'adobe inc', 'adobe systems europe'],
   },
   github: {
     displayName: 'GitHub',
     category: 'Development',
-    patterns: ['github', 'github inc'],
+    patterns: ['github', 'github inc', 'github ireland'],
   },
   figma: {
     displayName: 'Figma',
@@ -56,27 +56,27 @@ export const KNOWN_SAAS_VENDORS: Record<string, {
   microsoft: {
     displayName: 'Microsoft 365',
     category: 'Productivity',
-    patterns: ['microsoft', 'msft', 'microsoft 365', 'office 365', 'ms office'],
+    patterns: ['microsoft', 'msft', 'microsoft 365', 'office 365', 'ms office', 'microsoft ireland'],
   },
   google_workspace: {
     displayName: 'Google Workspace',
     category: 'Productivity',
-    patterns: ['google workspace', 'gsuite', 'g suite'],
+    patterns: ['google workspace', 'gsuite', 'g suite', 'google ireland', 'google commerce'],
   },
   atlassian: {
     displayName: 'Atlassian (Jira/Confluence)',
     category: 'Project Management',
-    patterns: ['atlassian', 'jira', 'confluence', 'bitbucket'],
+    patterns: ['atlassian', 'atlassian pty', 'jira', 'confluence', 'bitbucket'],
   },
   notion: {
     displayName: 'Notion',
     category: 'Productivity',
-    patterns: ['notion', 'notion labs'],
+    patterns: ['notion', 'notion labs', 'notion labs ireland'],
   },
   aws: {
     displayName: 'Amazon Web Services',
     category: 'Cloud Infrastructure',
-    patterns: ['aws', 'amazon web services', 'amazon aws'],
+    patterns: ['aws', 'amazon web services', 'amazon aws', 'aws emea'],
   },
   datadog: {
     displayName: 'Datadog',

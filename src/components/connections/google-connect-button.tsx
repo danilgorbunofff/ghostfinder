@@ -42,7 +42,7 @@ export function GoogleConnectButton() {
 
   return (
     <div>
-      <Button variant="outline" onClick={handleConnect} disabled={loading} className="group/btn gap-2">
+      <Button variant="outline" onClick={handleConnect} disabled={loading} data-testid="google-connect-button" className="group/btn gap-2">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Connect Google Workspace
         <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />

@@ -108,6 +108,7 @@ export function BillingToggle({
               !isAnnual ? 'text-background' : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setPeriod('monthly')}
+            data-testid="billing-monthly"
           >
             Monthly
           </button>
@@ -116,6 +117,7 @@ export function BillingToggle({
               isAnnual ? 'text-background' : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setPeriod('annual')}
+            data-testid="billing-annual"
           >
             Annual
           </button>
@@ -147,6 +149,7 @@ export function BillingToggle({
                 isCurrent ? `ring-2 ${config.ring}` : plan.tier === 'free' ? 'opacity-85' : ''
               } ${isMonitor ? 'md:scale-[1.03] shadow-lg border-brand/20' : ''}`}
               style={{ animationDelay: `${idx * 80}ms` }}
+              data-testid={`plan-${plan.tier}`}
             >
               {/* Accent bar */}
               {config.accentBar && (

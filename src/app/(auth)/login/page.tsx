@@ -74,6 +74,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full h-11 gap-3 font-medium"
             onClick={handleGoogleLogin}
+            data-testid="login-google"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -99,20 +100,20 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required />
+                onChange={(e) => setEmail(e.target.value)} required data-testid="login-email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password}
-                onChange={(e) => setPassword(e.target.value)} required />
+                onChange={(e) => setPassword(e.target.value)} required data-testid="login-password" />
             </div>
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" data-testid="login-error">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading} data-testid="login-submit">
               {loading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>

@@ -54,7 +54,7 @@ export function VendorGrid({ vendors, totalSpend, onVendorClick }: VendorGridPro
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+    <div data-testid="vendor-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
       {vendors.map((vendor, index) => {
         const pct = totalSpend > 0 ? (vendor.monthlyCost / totalSpend) * 100 : 0
         const cfg = statusConfig[vendor.status]

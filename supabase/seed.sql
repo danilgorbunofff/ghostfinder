@@ -49,6 +49,18 @@ BEGIN
     'Chase Bank', 'ins_3', 'active', now() - interval '1 hour'
   ) ON CONFLICT (org_id, item_id) DO NOTHING;
 
+  -- ── 4b. GoCardless connection (EU bank, financial panel shows "connected") ─
+  INSERT INTO public.gocardless_connections (
+    org_id, requisition_id, account_id,
+    institution_id, institution_name, country,
+    status, last_synced_at, expires_at
+  ) VALUES (
+    v_org_id, 'mock_req_seed', 'mock_gc_acct_seed',
+    'REVOLUT_REVOGB21', 'Revolut', 'GB',
+    'active', now() - interval '2 hours',
+    now() + interval '80 days'
+  ) ON CONFLICT (org_id, account_id) DO NOTHING;
+
   -- ── 5. SaaS vendors ───────────────────────────────────────────────────────
   INSERT INTO public.saas_vendors (
     org_id, name, normalized_name, monthly_cost, annual_cost,
@@ -86,6 +98,16 @@ BEGIN
     (v_org_id, 'txn_015', 'ZOOM VIDEO COMM',     'zoom',            450.00, now()::date-39, true),
     (v_org_id, 'txn_016', 'OFFICE SUPPLY CO',    'office supplies', 145.00, now()::date-8,  false),
     (v_org_id, 'txn_017', 'AMAZON WEB SERVICES', 'aws',            1200.00, now()::date-3,  true);
+
+  -- GoCardless (EU) transactions
+  INSERT INTO public.transactions (
+    org_id, source, gocardless_transaction_id, vendor, vendor_normalized, amount, currency, date, is_software
+  ) VALUES
+    (v_org_id, 'gocardless', 'gc_txn_001', 'NOTION LABS IRELAND LTD', 'notion',    320.00, 'EUR', now()::date-6,  true),
+    (v_org_id, 'gocardless', 'gc_txn_002', 'ATLASSIAN PTY LTD',      'atlassian', 380.00, 'EUR', now()::date-10, true),
+    (v_org_id, 'gocardless', 'gc_txn_003', 'ADYEN*FIGMA INC',        'figma',     540.00, 'EUR', now()::date-14, true),
+    (v_org_id, 'gocardless', 'gc_txn_004', 'SLACK TECHNOLOGIES LTD', 'slack',     780.00, 'GBP', now()::date-18, true),
+    (v_org_id, 'gocardless', 'gc_txn_005', 'STRIPE PAYMENTS UK',     'stripe',    150.00, 'GBP', now()::date-22, false);
 
   -- ── 7. Integration connections (usage panel shows "connected") ────────────
   INSERT INTO public.integration_connections (

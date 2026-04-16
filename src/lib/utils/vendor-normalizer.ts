@@ -13,6 +13,14 @@ const PAYMENT_PROCESSOR_PREFIXES = [
   'RECURRING ',
   'AUTOPAY ',
   'WIRE ',
+  // EU payment processors
+  'ADYEN*',
+  'MOLLIE*',
+  'GOCARDLESS*',
+  'KLARNA*',
+  'SUMUP*',
+  'IZETTLE*',
+  'WORLDPAY*',
 ]
 
 const NOISE_SUFFIXES = [
@@ -26,6 +34,22 @@ const NOISE_SUFFIXES = [
   'CORP.',
   'CO',
   'CO.',
+  'GMBH',
+  'AG',
+  'BV',
+  'B.V.',
+  'NV',
+  'N.V.',
+  'SA',
+  'S.A.',
+  'SRL',
+  'S.R.L.',
+  'PTY',
+  'SARL',
+  'OY',
+  'AB',
+  'AS',
+  'APS',
   'SUBSCRIPTION',
   'MONTHLY',
   'ANNUAL',
@@ -35,6 +59,10 @@ const NOISE_SUFFIXES = [
   'SERVICE',
   'SERVICES',
   'TECHNOLOGIES',
+  'IRELAND',
+  'EUROPE',
+  'INTERNATIONAL',
+  'UK',
 ]
 
 export function normalizeVendorName(rawName: string): {

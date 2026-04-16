@@ -28,3 +28,13 @@ export function GoogleLogo({ className }: { className?: string }) {
     </svg>
   )
 }
+
+export function GoCardlessLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="4" fill="#00827F" />
+      <path d="M7 12a5 5 0 0 1 10 0" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <circle cx="12" cy="14" r="2" fill="white" />
+    </svg>
+  )
+}

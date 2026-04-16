@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import crypto from 'crypto'
@@ -11,14 +12,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verify user is an admin
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id, role')
-    .eq('user_id', user.id)
-    .single()
+  // Ensure org exists & verify user is an admin
+  const membership = await ensureOrganization(user.id, user.email ?? undefined)
 
-  if (!membership || !['owner', 'admin'].includes(membership.role)) {
+  if (!['owner', 'admin'].includes(membership.role)) {
     return NextResponse.json(
       { error: 'Only admins can connect integrations' },
       { status: 403 }
@@ -43,8 +40,9 @@ export async function POST() {
     prompt: 'consent',
     scope: [
       'https://www.googleapis.com/auth/admin.directory.user.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
     ],
-    state: `${state}:${membership.org_id}`,
+    state: `${state}:${membership.orgId}`,
   })
 
   // Set state cookie for CSRF validation

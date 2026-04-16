@@ -40,7 +40,7 @@ function StatTile({
 
 export function ConnectionStats({ totalConnections, totalUsers, lastSynced }: ConnectionStatsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="connection-stats">
       <StatTile
         icon={Link2}
         label="Total Connections"

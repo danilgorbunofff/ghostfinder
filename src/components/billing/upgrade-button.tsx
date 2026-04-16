@@ -51,7 +51,7 @@ export function UpgradeButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="w-full group/upgrade gap-2" />}>
+      <DialogTrigger render={<Button data-testid="upgrade-button" className="w-full group/upgrade gap-2" />}>
         Upgrade to {planName}
         <ArrowRight className="h-4 w-4 -translate-x-1 opacity-0 group-hover/upgrade:translate-x-0 group-hover/upgrade:opacity-100 transition-all" />
       </DialogTrigger>
@@ -85,7 +85,7 @@ export function UpgradeButton({
           <DialogClose render={<Button variant="outline" />}>
             Cancel
           </DialogClose>
-          <Button onClick={handleUpgrade} disabled={loading} className="gap-2 group/checkout">
+          <Button onClick={handleUpgrade} disabled={loading} data-testid="upgrade-confirm" className="gap-2 group/checkout">
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

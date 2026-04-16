@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { exchangePublicToken } from '@/lib/services/plaid.service'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -24,13 +25,10 @@ export async function POST(request: Request) {
   try {
     const { accessToken, itemId } = await exchangePublicToken(publicToken)
 
-    const { data: membership } = await supabase
-      .from('org_members')
-      .select('org_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!membership) {
+    let membership: { orgId: string }
+    try {
+      membership = await ensureOrganization(user.id, user.email ?? undefined)
+    } catch {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
 
@@ -44,7 +42,7 @@ export async function POST(request: Request) {
     const { error: insertError } = await admin
       .from('plaid_connections')
       .insert({
-        org_id: membership.org_id,
+        org_id: membership.orgId,
         access_token_secret_id: secretResult,
         item_id: itemId,
         institution_name: institutionName,

@@ -50,19 +50,19 @@ export default async function SettingsPage() {
 
       <Tabs defaultValue="profile" orientation="vertical" className="flex-col md:flex-row gap-6 animate-fade-in-up" style={{ animationDelay: '80ms' }}>
         <TabsList variant="line" className="md:w-48 md:shrink-0">
-          <TabsTrigger value="profile" className="gap-2">
+          <TabsTrigger value="profile" className="gap-2" data-testid="tab-profile">
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="organization" className="gap-2">
+          <TabsTrigger value="organization" className="gap-2" data-testid="tab-organization">
             <Building2 className="h-4 w-4" />
             Organization
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
+          <TabsTrigger value="notifications" className="gap-2" data-testid="tab-notifications">
             <Bell className="h-4 w-4" />
             Notifications
           </TabsTrigger>
-          <TabsTrigger value="danger" className="gap-2 text-destructive">
+          <TabsTrigger value="danger" className="gap-2 text-destructive" data-testid="tab-danger-zone">
             <AlertTriangle className="h-4 w-4" />
             Danger Zone
           </TabsTrigger>

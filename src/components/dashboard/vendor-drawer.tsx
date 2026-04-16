@@ -84,6 +84,7 @@ export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps)
         aria-modal="true"
         aria-label={vendor ? `${vendor.name} details` : undefined}
         tabIndex={-1}
+        data-testid="vendor-drawer"
         className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-background border-l shadow-2xl transition-transform duration-300 ease-out custom-scrollbar overflow-y-auto ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}

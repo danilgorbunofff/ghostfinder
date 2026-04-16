@@ -58,7 +58,7 @@ export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="group/btn gap-2">
+          <Button variant="outline" data-testid="okta-connect-button" className="group/btn gap-2">
             <Shield className="h-4 w-4" />
             Connect Okta
             <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />
@@ -108,6 +108,7 @@ export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
             <Label htmlFor="orgUrl">Okta Org URL</Label>
             <Input
               id="orgUrl"
+              data-testid="okta-org-url"
               type="url"
               placeholder="https://your-company.okta.com"
               value={orgUrl}
@@ -120,6 +121,7 @@ export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
             <Label htmlFor="apiToken">API Token</Label>
             <Input
               id="apiToken"
+              data-testid="okta-api-token"
               type="password"
               placeholder="00xxxxxxxxxxxxxxxxxx"
               value={apiToken}
@@ -129,7 +131,7 @@ export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
             />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" data-testid="okta-connect-submit" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Connect
           </Button>

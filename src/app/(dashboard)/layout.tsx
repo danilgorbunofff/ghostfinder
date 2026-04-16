@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { PageWrapper } from '@/components/ui/page-wrapper'
+import { DevToolsLoader } from '@/components/dev/dev-tools-loader'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 
 export default async function DashboardLayout({
   children,
@@ -15,6 +17,13 @@ export default async function DashboardLayout({
   if (!user) {
     redirect('/login')
   }
+
+  // Ensure org exists (safety net for users missing handle_new_user trigger)
+  await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
   // Fetch user's org membership
   const { data: membership } = await supabase
@@ -49,6 +58,7 @@ export default async function DashboardLayout({
           </PageWrapper>
         </main>
       </div>
+      <DevToolsLoader />
     </div>
   )
 }

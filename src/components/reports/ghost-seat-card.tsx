@@ -74,6 +74,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
     <Card
       className={`card-interactive animate-fade-in-up border-l-4 ${wasteSeverityBorder(waste)}`}
       style={{ animationDelay: `${index * 60}ms` }}
+      data-testid="ghost-seat-card"
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-3">

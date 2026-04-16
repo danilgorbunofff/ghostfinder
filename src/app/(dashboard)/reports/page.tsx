@@ -51,7 +51,7 @@ export default async function ReportsPage({
               <Ghost className="h-10 w-10 text-orange-500/40" />
             </div>
           </div>
-          <h3 className="text-lg font-semibold mb-1">No reports generated yet</h3>
+          <h3 className="text-lg font-semibold mb-1" data-testid="reports-empty-state">No reports generated yet</h3>
           <p className="text-sm text-muted-foreground text-center max-w-sm mb-6">
             Reports are generated weekly once you connect your data sources.
           </p>
@@ -90,7 +90,7 @@ export default async function ReportsPage({
     <div className="space-y-5">
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in-up">
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground" data-testid="report-date">
           Generated {new Date(report.generated_at).toLocaleDateString()} ·{' '}
           {report.opportunity_count} optimization opportunities found
         </p>
@@ -114,7 +114,7 @@ export default async function ReportsPage({
               Total Monthly Waste Detected
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl md:text-5xl font-bold text-orange-500 tabular-nums tracking-tight animate-number-roll">
+              <span className="text-4xl md:text-5xl font-bold text-orange-500 tabular-nums tracking-tight animate-number-roll" data-testid="total-waste">
                 ${Number(report.total_monthly_waste ?? 0).toLocaleString()}
               </span>
               <span className="text-lg font-normal text-muted-foreground">/mo</span>

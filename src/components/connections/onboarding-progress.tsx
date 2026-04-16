@@ -26,7 +26,7 @@ export function OnboardingProgress({
   const nextStep = nextIdx >= 0 ? stepMeta[nextIdx] : null
 
   return (
-    <div className="rounded-xl border bg-card p-5 animate-fade-in-up" data-slot="card">
+    <div className="rounded-xl border bg-card p-5 animate-fade-in-up" data-slot="card" data-testid="onboarding-progress">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold">Setup Progress</p>
         <span className="text-xs text-muted-foreground tabular-nums">{completedCount} of 3</span>

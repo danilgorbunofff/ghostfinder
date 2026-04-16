@@ -78,7 +78,7 @@ export function PlaidLinkButton({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <div>
       {!linkToken ? (
-        <Button onClick={fetchLinkToken} disabled={loading} className="group/btn gap-2">
+        <Button onClick={fetchLinkToken} disabled={loading} data-testid="plaid-connect-button" className="group/btn gap-2">
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -88,7 +88,7 @@ export function PlaidLinkButton({ onSuccess }: { onSuccess?: () => void }) {
           <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />
         </Button>
       ) : (
-        <Button onClick={() => open()} disabled={!ready || loading} className="group/btn gap-2">
+        <Button onClick={() => open()} disabled={!ready || loading} data-testid="plaid-connect-button" className="group/btn gap-2">
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

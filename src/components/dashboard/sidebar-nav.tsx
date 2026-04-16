@@ -62,8 +62,8 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
 
       {/* Org info */}
       <div className="px-4 py-3 border-b border-foreground/5">
-        <p className="text-sm font-semibold truncate">{orgName}</p>
-        <p className="text-[11px] text-muted-foreground capitalize tracking-wide">{role}</p>
+        <p data-testid="nav-org-name" className="text-sm font-semibold truncate">{orgName}</p>
+        <p data-testid="nav-user-role" className="text-[11px] text-muted-foreground capitalize tracking-wide">{role}</p>
       </div>
 
       <nav className="flex-1 relative px-2 py-2">
@@ -85,6 +85,8 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                data-testid={`nav-${item.label.toLowerCase()}`}
+                data-active={active ? 'true' : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={`group/nav flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                   active
@@ -133,6 +135,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
       <Button
         variant="ghost"
         size="icon"
+        data-testid="nav-mobile-toggle"
         className="fixed top-4 left-4 z-50 md:hidden"
         onClick={() => setMobileOpen(!mobileOpen)}
       >
@@ -149,6 +152,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
 
       {/* Mobile sidebar */}
       <aside
+        data-testid="sidebar-nav"
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-foreground/5 bg-background/80 backdrop-blur-2xl sidebar-mesh transition-transform duration-300 ease-in-out md:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}

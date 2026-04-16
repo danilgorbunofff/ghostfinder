@@ -99,9 +99,9 @@ export function StatsCards({
   const activeUsers = totalUsers - inactiveUsers
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
+    <div data-testid="stats-cards" className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
       {/* Estimated Waste — Hero card, spans left side */}
-      <Card className="lg:col-span-5 lg:row-span-2 relative overflow-hidden border-orange-200/60 dark:border-orange-800/40 bg-gradient-to-br from-orange-50 via-background to-background dark:from-orange-950/30 dark:via-background dark:to-background card-interactive hover:shadow-orange-500/10 animate-fade-in-up group">
+      <Card data-testid="stat-estimated-waste" className="lg:col-span-5 lg:row-span-2 relative overflow-hidden border-orange-200/60 dark:border-orange-800/40 bg-gradient-to-br from-orange-50 via-background to-background dark:from-orange-950/30 dark:via-background dark:to-background card-interactive hover:shadow-orange-500/10 animate-fade-in-up group">
         {/* Background sparkline watermark */}
         <div className="absolute bottom-0 left-0 right-0 h-24 opacity-[0.08] group-hover:opacity-[0.12] transition-opacity">
           <ResponsiveContainer width="100%" height="100%">
@@ -143,7 +143,7 @@ export function StatsCards({
       </Card>
 
       {/* Total SaaS Spend */}
-      <Card className="lg:col-span-4 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:75ms] group">
+      <Card data-testid="stat-total-spend" className="lg:col-span-4 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:75ms] group">
         {/* Background sparkline */}
         <div className="absolute bottom-0 left-0 right-0 h-16 opacity-[0.06] group-hover:opacity-[0.10] transition-opacity">
           <ResponsiveContainer width="100%" height="100%">
@@ -177,7 +177,7 @@ export function StatsCards({
       </Card>
 
       {/* Opportunities */}
-      <Card className="lg:col-span-3 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:150ms] group">
+      <Card data-testid="stat-opportunities" className="lg:col-span-3 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:150ms] group">
         <CardContent className="relative p-5">
           <div className="flex items-start justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">Opportunities</p>
@@ -195,7 +195,7 @@ export function StatsCards({
       </Card>
 
       {/* User Activity — bottom right area */}
-      <Card className="lg:col-span-7 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:225ms] group">
+      <Card data-testid="stat-user-activity" className="lg:col-span-7 relative overflow-hidden card-interactive animate-fade-in-up [animation-delay:225ms] group">
         <CardContent className="relative p-5">
           <div className="flex items-start justify-between mb-4">
             <p className="text-sm font-medium text-muted-foreground">User Activity</p>

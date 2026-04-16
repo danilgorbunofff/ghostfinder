@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyOktaConnection } from '@/lib/services/okta.service'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -48,14 +49,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get user's org
-    const { data: membership } = await supabase
-      .from('org_members')
-      .select('org_id, role')
-      .eq('user_id', user.id)
-      .single()
+    // Ensure org exists & verify role
+    const membership = await ensureOrganization(user.id, user.email ?? undefined)
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+    if (!['owner', 'admin'].includes(membership.role)) {
       return NextResponse.json(
         { error: 'Only admins can connect integrations' },
         { status: 403 }
@@ -67,15 +64,15 @@ export async function POST(request: Request) {
 
     const { data: secretId } = await admin.rpc('store_secret', {
       p_secret: apiToken,
-      p_name: `okta_${membership.org_id}`,
-      p_description: `Okta API token for org ${membership.org_id}`,
+      p_name: `okta_${membership.orgId}`,
+      p_description: `Okta API token for org ${membership.orgId}`,
     })
 
     // Create or update integration connection
     const { error: upsertError } = await admin
       .from('integration_connections')
       .upsert({
-        org_id: membership.org_id,
+        org_id: membership.orgId,
         provider: 'okta',
         access_token_secret_id: secretId,
         metadata: { orgUrl, domain: new URL(orgUrl).hostname },

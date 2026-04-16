@@ -75,13 +75,19 @@ export async function GET(request: Request) {
 
     // Detect domain from the authorized admin's profile
     oauth2Client.setCredentials(tokens)
-    const people = google.people({ version: 'v1', auth: oauth2Client })
-    const me = await people.people.get({
-      resourceName: 'people/me',
-      personFields: 'emailAddresses',
-    })
-    const adminEmail = me.data.emailAddresses?.[0]?.value ?? ''
-    const domain = adminEmail.split('@')[1] ?? ''
+    let adminEmail = ''
+    let domain = ''
+    try {
+      const people = google.people({ version: 'v1', auth: oauth2Client })
+      const me = await people.people.get({
+        resourceName: 'people/me',
+        personFields: 'emailAddresses',
+      })
+      adminEmail = me.data.emailAddresses?.[0]?.value ?? ''
+      domain = adminEmail.split('@')[1] ?? ''
+    } catch {
+      // People API unavailable — domain will be detected on first sync
+    }
 
     // Create or update integration connection
     const { error: upsertError } = await admin

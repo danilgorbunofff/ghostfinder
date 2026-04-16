@@ -49,7 +49,7 @@ export function VendorBreakdown({ vendors }: VendorBreakdownProps) {
   const total = chartData.reduce((s, d) => s + d.value, 0)
 
   return (
-    <Card className="card-interactive animate-fade-in-up [animation-delay:375ms] overflow-hidden">
+    <Card className="card-interactive animate-fade-in-up [animation-delay:375ms] overflow-hidden" data-testid="vendor-breakdown">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>

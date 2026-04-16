@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { PlaidLinkButton } from '@/components/connections/plaid-link-button'
+import { GoCardlessConnectButton } from '@/components/connections/gocardless-connect-button'
 import { OktaConnectButton } from '@/components/connections/okta-connect-button'
 import { GoogleConnectButton } from '@/components/connections/google-connect-button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, Building2, Shield, RefreshCw, AlertCircle, Globe, Plus } from 'lucide-react'
-import { PlaidLogo, OktaLogo, GoogleLogo } from '@/components/connections/provider-logos'
+import { PlaidLogo, OktaLogo, GoogleLogo, GoCardlessLogo } from '@/components/connections/provider-logos'
 import { OnboardingProgress } from '@/components/connections/onboarding-progress'
 import { ConnectionStats } from '@/components/connections/connection-stats'
 import type { Metadata } from 'next'
@@ -38,12 +39,30 @@ const plaidStatusConfig = {
   disabled: { label: 'Disabled', className: 'bg-muted text-muted-foreground', ring: 'ring-muted-foreground/20' },
 } as const
 
-export default async function ConnectionsPage() {
+const gcStatusConfig = {
+  pending: { label: 'Pending', className: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-900', ring: 'ring-blue-500/40' },
+  active: { label: 'Active', className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-900', ring: 'ring-green-500/40' },
+  syncing: { label: 'Syncing', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-amber-200 dark:border-amber-900', ring: 'ring-amber-500/40' },
+  error: { label: 'Error', className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-900', ring: 'ring-red-500/40' },
+  expired: { label: 'Expired', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-amber-200 dark:border-amber-900', ring: 'ring-amber-500/40' },
+  disabled: { label: 'Disabled', className: 'bg-muted text-muted-foreground', ring: 'ring-muted-foreground/20' },
+} as const
+
+export default async function ConnectionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string }>
+}) {
+  const { success, error: urlError } = await searchParams
   const supabase = await createClient()
 
   const { data: connections } = await supabase
     .from('plaid_connections')
     .select('id, institution_name, status, last_synced_at, error_message')
+
+  const { data: gcConnections } = await supabase
+    .from('gocardless_connections')
+    .select('id, institution_name, country, status, last_synced_at, expires_at, error_message')
 
   const { data: integrations } = await supabase
     .from('integration_connections')
@@ -53,15 +72,16 @@ export default async function ConnectionsPage() {
     .from('waste_reports')
     .select('id', { count: 'exact', head: true })
 
-  const hasBankConnection = (connections?.length ?? 0) > 0
+  const hasBankConnection = (connections?.length ?? 0) > 0 || (gcConnections?.length ?? 0) > 0
   const hasIdentityProvider = (integrations?.length ?? 0) > 0
   const hasWasteReport = (wasteReportCount ?? 0) > 0
 
   // Stats
-  const totalConnections = (connections?.length ?? 0) + (integrations?.length ?? 0)
+  const totalConnections = (connections?.length ?? 0) + (gcConnections?.length ?? 0) + (integrations?.length ?? 0)
   const totalUsers = (integrations ?? []).reduce((sum, i) => sum + (i.total_users ?? 0), 0)
   const allSyncDates = [
     ...(connections ?? []).map(c => c.last_synced_at).filter(Boolean),
+    ...(gcConnections ?? []).map(c => c.last_synced_at).filter(Boolean),
     ...(integrations ?? []).map(i => i.last_synced_at).filter(Boolean),
   ] as string[]
   const lastSynced = allSyncDates.length > 0
@@ -76,6 +96,21 @@ export default async function ConnectionsPage() {
       <p className="text-muted-foreground animate-fade-in-up">
         Connect your bank accounts and identity providers.
       </p>
+
+      {/* Success / error feedback from OAuth callbacks */}
+      {success === 'google_connected' && (
+        <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/40 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+          Google Workspace connected successfully.
+        </div>
+      )}
+      {urlError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          {urlError === 'google_oauth_denied' && 'Google authorization was denied.'}
+          {urlError === 'google_callback_failed' && 'Google connection failed — please try again.'}
+          {urlError === 'invalid_state' && 'Security check failed — please try again.'}
+          {!['google_oauth_denied', 'google_callback_failed', 'invalid_state'].includes(urlError) && 'Connection failed — please try again.'}
+        </div>
+      )}
 
       {/* Stats strip */}
       <ConnectionStats
@@ -100,7 +135,12 @@ export default async function ConnectionsPage() {
                 Connect your company bank or credit card to discover SaaS charges.
               </CardDescription>
             </div>
-            {hasBankConnection && <PlaidLinkButton />}
+            {hasBankConnection && (
+              <div className="flex gap-2">
+                <PlaidLinkButton />
+                <GoCardlessConnectButton />
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -172,6 +212,154 @@ export default async function ConnectionsPage() {
                   </div>
                 )
               })}
+
+              {/* GoCardless connections */}
+              {gcConnections && gcConnections.map((gc, idx) => {
+                const status = gc.status as keyof typeof gcStatusConfig
+                const cfg = gcStatusConfig[status] ?? gcStatusConfig.disabled
+                const hasError = !!gc.error_message
+                const isExpired = status === 'expired'
+
+                return (
+                  <div
+                    key={gc.id}
+                    className={`card-interactive rounded-xl border p-4 animate-fade-in-up ${
+                      hasError || isExpired ? 'bg-red-500/[0.03] dark:bg-red-500/[0.06]' : ''
+                    }`}
+                    style={{ animationDelay: `${(connections.length + idx) * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`shrink-0 rounded-xl ring-2 ring-offset-2 ring-offset-background ${cfg.ring}`}>
+                        <GoCardlessLogo className="h-10 w-10 rounded-xl" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{gc.institution_name}</p>
+                          <Badge variant="outline" className="text-[10px] shrink-0 bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-900">
+                            EU
+                          </Badge>
+                          <Badge variant="outline" className={`${cfg.className} text-[10px] shrink-0`}>
+                            {status === 'syncing' && <span className="mr-1 h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />}
+                            {cfg.label}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <RefreshCw className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {gc.last_synced_at
+                              ? `Synced ${formatTimeAgo(gc.last_synced_at)}`
+                              : 'Not synced yet'}
+                          </span>
+                          <span className="text-muted-foreground">·</span>
+                          <Globe className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground font-mono">{gc.country}</span>
+                        </div>
+
+                        {(hasError || isExpired) && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                            <p className="text-xs text-destructive truncate">
+                              {gc.error_message || 'Bank access expired'}
+                            </p>
+                            <Button variant="ghost" size="sm" className="h-6 text-xs shrink-0 text-brand">
+                              {isExpired ? 'Re-authorize' : 'Reconnect'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : gcConnections && gcConnections.length > 0 ? (
+            <div className="space-y-3">
+              {gcConnections.map((gc, idx) => {
+                const status = gc.status as keyof typeof gcStatusConfig
+                const cfg = gcStatusConfig[status] ?? gcStatusConfig.disabled
+                const hasError = !!gc.error_message
+                const isExpired = status === 'expired'
+
+                return (
+                  <div
+                    key={gc.id}
+                    className={`card-interactive rounded-xl border p-4 animate-fade-in-up ${
+                      hasError || isExpired ? 'bg-red-500/[0.03] dark:bg-red-500/[0.06]' : ''
+                    }`}
+                    style={{ animationDelay: `${idx * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`shrink-0 rounded-xl ring-2 ring-offset-2 ring-offset-background ${cfg.ring}`}>
+                        <GoCardlessLogo className="h-10 w-10 rounded-xl" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{gc.institution_name}</p>
+                          <Badge variant="outline" className="text-[10px] shrink-0 bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-900">
+                            EU
+                          </Badge>
+                          <Badge variant="outline" className={`${cfg.className} text-[10px] shrink-0`}>
+                            {cfg.label}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <RefreshCw className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {gc.last_synced_at
+                              ? `Synced ${formatTimeAgo(gc.last_synced_at)}`
+                              : 'Not synced yet'}
+                          </span>
+                          <span className="text-muted-foreground">·</span>
+                          <Globe className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground font-mono">{gc.country}</span>
+                        </div>
+
+                        {(hasError || isExpired) && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                            <p className="text-xs text-destructive truncate">
+                              {gc.error_message || 'Bank access expired'}
+                            </p>
+                            <Button variant="ghost" size="sm" className="h-6 text-xs shrink-0 text-brand">
+                              {isExpired ? 'Re-authorize' : 'Reconnect'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             /* Empty: illustrated CTA */
@@ -184,7 +372,10 @@ export default async function ConnectionsPage() {
               <p className="text-xs text-muted-foreground text-center max-w-xs mb-4">
                 Link your corporate card or bank to automatically detect SaaS transactions and spending patterns.
               </p>
-              <PlaidLinkButton />
+              <div className="flex gap-2">
+                <PlaidLinkButton />
+                <GoCardlessConnectButton />
+              </div>
             </div>
           )}
         </CardContent>

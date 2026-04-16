@@ -101,6 +101,7 @@ export function NotificationSettingsForm({
               id="slack-toggle"
               checked={slackEnabled}
               onCheckedChange={setSlackEnabled}
+              data-testid="notification-slack-toggle"
             />
           </div>
         </div>
@@ -136,6 +137,7 @@ export function NotificationSettingsForm({
               id="email-toggle"
               checked={emailEnabled}
               onCheckedChange={setEmailEnabled}
+              data-testid="notification-email-toggle"
             />
           </div>
         </div>
@@ -173,6 +175,7 @@ export function NotificationSettingsForm({
             value={thresholdAmount}
             onChange={(e) => setThresholdAmount(e.target.value)}
             className="max-w-[200px]"
+            data-testid="notification-threshold"
           />
           <p className="text-xs text-muted-foreground">
             Only send notifications when total monthly waste exceeds this amount.

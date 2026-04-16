@@ -44,6 +44,7 @@ export function ManageButton({
       disabled={loading}
       variant={variant}
       size={size}
+      data-testid="manage-subscription"
       className={`${className} gap-2 hover:border-brand transition-colors`}
     >
       {loading ? (

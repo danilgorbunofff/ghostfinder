@@ -47,7 +47,7 @@ export function PageHeader({ userEmail, orgName }: PageHeaderProps) {
   }
 
   return (
-    <header className="relative flex items-center justify-between border-b border-foreground/5 bg-background/70 backdrop-blur-xl px-6 py-3 sticky top-0 z-30 after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-brand/40 after:to-transparent">
+    <header data-testid="page-header" className="relative flex items-center justify-between border-b border-foreground/5 bg-background/70 backdrop-blur-xl px-6 py-3 sticky top-0 z-30 after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-brand/40 after:to-transparent">
       <div>
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
           <Link href="/" className="hover:text-foreground transition-colors">
@@ -70,7 +70,7 @@ export function PageHeader({ userEmail, orgName }: PageHeaderProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
-            <p className="text-sm font-medium">{userEmail}</p>
+            <p data-testid="header-user-email" className="text-sm font-medium">{userEmail}</p>
             <p className="text-xs text-muted-foreground">{orgName}</p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

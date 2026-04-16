@@ -1,5 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { syncTransactions } from '@/lib/services/plaid.service'
+import {
+  getAccountTransactions,
+  extractMerchantName,
+} from '@/lib/services/gocardless.service'
 import { normalizeVendorName, isSoftwareTransaction } from '@/lib/utils/vendor-normalizer'
 import { NextResponse } from 'next/server'
 
@@ -116,6 +120,117 @@ export async function GET(request: Request) {
       }
 
       results.push(connectionResult)
+    }
+
+    // ─── GoCardless Sync ──────────────────────────────────────────────────────
+    const { data: gcConnections, error: gcFetchError } = await admin
+      .from('gocardless_connections')
+      .select('id, org_id, account_id, cursor, expires_at')
+      .eq('status', 'active')
+
+    if (!gcFetchError && gcConnections) {
+      for (const gc of gcConnections) {
+        const gcResult = { connectionId: gc.id, added: 0, errors: [] as string[] }
+
+        try {
+          // Check PSD2 expiry
+          if (gc.expires_at && new Date(gc.expires_at) < new Date()) {
+            await admin
+              .from('gocardless_connections')
+              .update({
+                status: 'expired',
+                error_message: 'Bank access expired — re-authorize required',
+              })
+              .eq('id', gc.id)
+            gcResult.errors.push('Access expired')
+            results.push(gcResult)
+            continue
+          }
+
+          if (!gc.account_id) {
+            gcResult.errors.push('No account ID')
+            results.push(gcResult)
+            continue
+          }
+
+          await admin
+            .from('gocardless_connections')
+            .update({ status: 'syncing' })
+            .eq('id', gc.id)
+
+          // Date range: from cursor (or 90 days ago) to today
+          const today = new Date().toISOString().split('T')[0]
+          const defaultFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0]
+          const dateFrom = gc.cursor || defaultFrom
+
+          const { booked } = await getAccountTransactions(gc.account_id, dateFrom, today)
+
+          for (const txn of booked) {
+            const merchantName = extractMerchantName(txn)
+            const isSoftware = isSoftwareTransaction(
+              txn.merchantCategoryCode || null,
+              merchantName,
+              null
+            )
+
+            const vendorInfo = merchantName
+              ? normalizeVendorName(merchantName)
+              : { normalizedName: null, displayName: null, category: null }
+
+            const amount = Math.abs(parseFloat(txn.transactionAmount.amount))
+
+            await admin.from('transactions').upsert({
+              org_id: gc.org_id,
+              source: 'gocardless',
+              gocardless_connection_id: gc.id,
+              gocardless_transaction_id: txn.transactionId,
+              vendor: merchantName,
+              vendor_normalized: vendorInfo.normalizedName,
+              amount,
+              currency: txn.transactionAmount.currency || 'EUR',
+              date: txn.bookingDate,
+              mcc_code: txn.merchantCategoryCode || null,
+              category: null,
+              description: txn.remittanceInformationUnstructured || null,
+              is_software: isSoftware,
+              pending: false,
+            }, {
+              onConflict: 'org_id,gocardless_transaction_id',
+            })
+
+            if (isSoftware) gcResult.added++
+          }
+
+          await admin
+            .from('gocardless_connections')
+            .update({
+              cursor: today,
+              status: 'active',
+              last_synced_at: new Date().toISOString(),
+              error_code: null,
+              error_message: null,
+            })
+            .eq('id', gc.id)
+
+          await recalculateVendorAggregates(admin, gc.org_id)
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Unknown error'
+          const code = (err as { code?: string }).code
+          gcResult.errors.push(message)
+          await admin
+            .from('gocardless_connections')
+            .update({
+              status: 'error',
+              error_code: code || 'SYNC_ERROR',
+              error_message: message,
+            })
+            .eq('id', gc.id)
+        }
+
+        results.push(gcResult)
+      }
     }
 
     return NextResponse.json({

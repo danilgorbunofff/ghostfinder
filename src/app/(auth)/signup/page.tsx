@@ -93,7 +93,7 @@ export default function SignupPage() {
                 <Ghost className="h-10 w-10 text-success animate-bounce" />
               </div>
             </div>
-            <CardTitle className="text-xl mb-2">Check your email</CardTitle>
+            <CardTitle className="text-xl mb-2" data-testid="signup-confirmation">Check your email</CardTitle>
             <CardDescription className="text-center mb-6">
               We&apos;ve sent a confirmation link to{' '}
               <span className="font-semibold text-foreground">{email}</span>.
@@ -140,6 +140,7 @@ export default function SignupPage() {
             variant="outline"
             className="w-full h-11 gap-3 font-medium"
             onClick={handleGoogleLogin}
+            data-testid="signup-google"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -165,12 +166,12 @@ export default function SignupPage() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)} required />
+                onChange={(e) => setEmail(e.target.value)} required data-testid="signup-email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password}
-                onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                onChange={(e) => setPassword(e.target.value)} required minLength={6} data-testid="signup-password" />
               {password.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="flex gap-1">
@@ -195,7 +196,7 @@ export default function SignupPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading} data-testid="signup-submit">
               {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>

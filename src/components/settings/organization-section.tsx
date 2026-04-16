@@ -89,10 +89,11 @@ export function OrganizationSection({
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={!isOwnerOrAdmin}
+              data-testid="org-name-input"
             />
           </div>
           {isOwnerOrAdmin && (
-            <Button onClick={handleSave} disabled={saving} size="sm">
+            <Button onClick={handleSave} disabled={saving} size="sm" data-testid="org-save-button">
               {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Update name'}
             </Button>
           )}
@@ -118,7 +119,7 @@ export function OrganizationSection({
           )}
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table data-testid="members-list">
             <TableHeader>
               <TableRow>
                 <TableHead>User ID</TableHead>

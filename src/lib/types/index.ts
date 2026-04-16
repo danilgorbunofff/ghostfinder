@@ -85,6 +85,28 @@ export interface UserActivity {
 
 export type PlaidConnectionStatus = 'active' | 'syncing' | 'error' | 'disabled'
 
+export type GoCardlessConnectionStatus = 'pending' | 'active' | 'syncing' | 'error' | 'expired' | 'disabled'
+
+export interface GoCardlessConnection {
+  id: string
+  org_id: string
+  requisition_id: string | null
+  account_id: string | null
+  institution_id: string | null
+  institution_name: string
+  country: string
+  status: GoCardlessConnectionStatus
+  cursor: string | null
+  last_synced_at: string | null
+  expires_at: string | null
+  error_code: string | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type TransactionSource = 'plaid' | 'gocardless'
+
 export interface PlaidConnection {
   id: string
   org_id: string
@@ -104,8 +126,11 @@ export interface PlaidConnection {
 export interface Transaction {
   id: string
   org_id: string
+  source: TransactionSource
   plaid_connection_id: string | null
-  plaid_transaction_id: string
+  plaid_transaction_id: string | null
+  gocardless_connection_id: string | null
+  gocardless_transaction_id: string | null
   vendor: string | null
   vendor_normalized: string | null
   amount: number

@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 
 export function DangerZoneSection({ isOwner }: { isOwner: boolean }) {
   return (
-    <Card className="border-destructive/50 animate-fade-in-up">
+    <Card className="border-destructive/50 animate-fade-in-up" data-testid="danger-zone-section">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">

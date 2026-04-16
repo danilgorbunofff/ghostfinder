@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createLinkToken } from '@/lib/services/plaid.service'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
@@ -8,6 +9,13 @@ export async function POST() {
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Ensure org exists before starting Plaid flow
+  try {
+    await ensureOrganization(user.id, user.email ?? undefined)
+  } catch {
+    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
   }
 
   if (process.env.MOCK_SERVICES === 'true') {
