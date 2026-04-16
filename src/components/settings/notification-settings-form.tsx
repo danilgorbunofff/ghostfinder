@@ -3,8 +3,10 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { DollarSign, Loader2, Lock, Mail, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface NotificationSettingsData {
   slack_webhook_url: string | null
@@ -33,11 +35,9 @@ export function NotificationSettingsForm({
     String(settings?.notify_threshold_amount ?? 0)
   )
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
-    setSaved(false)
     try {
       const recipients = emailRecipients
         .split(',')
@@ -57,11 +57,13 @@ export function NotificationSettingsForm({
       })
 
       if (res.ok) {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
+        toast.success('Notification settings saved')
+      } else {
+        toast.error('Failed to save settings')
       }
     } catch (err) {
       console.error('Save error:', err)
+      toast.error('Network error')
     } finally {
       setSaving(false)
     }
@@ -69,33 +71,41 @@ export function NotificationSettingsForm({
 
   if (disabled) {
     return (
-      <div className="text-center py-6">
-        <Badge variant="secondary" className="mb-2">Recovery Plan Required</Badge>
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center mb-3">
+          <Lock className="h-5 w-5 text-muted-foreground" />
+        </div>
         <p className="text-sm text-muted-foreground">
-          Upgrade to the Recovery plan to configure Slack and email notifications.
+          Upgrade to the Recovery plan to configure notifications.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Slack Settings */}
-      <div className="space-y-4">
+      <div className="rounded-lg border p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Slack</h3>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-md bg-purple-500/10 flex items-center justify-center">
+              <MessageSquare className="h-3.5 w-3.5 text-purple-500" />
+            </div>
+            <h3 className="text-sm font-medium">Slack</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="slack-toggle" className="text-xs text-muted-foreground">
+              {slackEnabled ? 'Enabled' : 'Disabled'}
+            </Label>
+            <Switch
+              id="slack-toggle"
               checked={slackEnabled}
-              onChange={(e) => setSlackEnabled(e.target.checked)}
-              className="rounded"
+              onCheckedChange={setSlackEnabled}
             />
-            Enabled
-          </label>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="slack-webhook">Webhook URL</Label>
+          <Label htmlFor="slack-webhook" className="text-xs">Webhook URL</Label>
           <Input
             id="slack-webhook"
             placeholder="https://hooks.slack.com/services/..."
@@ -110,21 +120,27 @@ export function NotificationSettingsForm({
       </div>
 
       {/* Email Settings */}
-      <div className="space-y-4">
+      <div className="rounded-lg border p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Email</h3>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-md bg-blue-500/10 flex items-center justify-center">
+              <Mail className="h-3.5 w-3.5 text-blue-500" />
+            </div>
+            <h3 className="text-sm font-medium">Email</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="email-toggle" className="text-xs text-muted-foreground">
+              {emailEnabled ? 'Enabled' : 'Disabled'}
+            </Label>
+            <Switch
+              id="email-toggle"
               checked={emailEnabled}
-              onChange={(e) => setEmailEnabled(e.target.checked)}
-              className="rounded"
+              onCheckedChange={setEmailEnabled}
             />
-            Enabled
-          </label>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email-recipients">Recipients</Label>
+          <Label htmlFor="email-recipients" className="text-xs">Recipients</Label>
           <Input
             id="email-recipients"
             placeholder="admin@company.com, cfo@company.com"
@@ -139,24 +155,33 @@ export function NotificationSettingsForm({
       </div>
 
       {/* Threshold */}
-      <div className="space-y-2">
-        <Label htmlFor="threshold">Minimum Waste Threshold ($)</Label>
-        <Input
-          id="threshold"
-          type="number"
-          min="0"
-          step="1"
-          placeholder="0"
-          value={thresholdAmount}
-          onChange={(e) => setThresholdAmount(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          Only send notifications when total monthly waste exceeds this amount.
-        </p>
+      <div className="rounded-lg border p-4 space-y-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-md bg-green-500/10 flex items-center justify-center">
+            <DollarSign className="h-3.5 w-3.5 text-green-500" />
+          </div>
+          <h3 className="text-sm font-medium">Waste Threshold</h3>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="threshold" className="text-xs">Minimum Amount ($)</Label>
+          <Input
+            id="threshold"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0"
+            value={thresholdAmount}
+            onChange={(e) => setThresholdAmount(e.target.value)}
+            className="max-w-[200px]"
+          />
+          <p className="text-xs text-muted-foreground">
+            Only send notifications when total monthly waste exceeds this amount.
+          </p>
+        </div>
       </div>
 
-      <Button onClick={handleSave} disabled={saving}>
-        {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
+      <Button onClick={handleSave} disabled={saving} size="sm">
+        {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Save Settings'}
       </Button>
     </div>
   )

@@ -33,6 +33,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 })
   }
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.json({ success: true, message: 'Mock mode: Okta connection accepted' })
+  }
+
   try {
     // Verify the token works
     const isValid = await verifyOktaConnection(orgUrl, apiToken)

@@ -17,6 +17,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.json({ success: true, itemId: 'mock_item_id', institutionName })
+  }
+
   try {
     const { accessToken, itemId } = await exchangePublicToken(publicToken)
 

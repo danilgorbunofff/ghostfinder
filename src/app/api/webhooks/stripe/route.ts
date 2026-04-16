@@ -7,6 +7,10 @@ import type Stripe from 'stripe'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.json({ received: true, mock: true })
+  }
+
   const body = await request.text()
   const headersList = await headers()
   const signature = headersList.get('stripe-signature')

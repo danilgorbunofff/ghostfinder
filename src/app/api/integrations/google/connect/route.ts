@@ -25,6 +25,10 @@ export async function POST() {
     )
   }
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.json({ authorizationUrl: `${process.env.NEXT_PUBLIC_APP_URL}/connections?mock_google=true` })
+  }
+
   // Generate OAuth state parameter (CSRF protection)
   const state = crypto.randomBytes(32).toString('hex')
 

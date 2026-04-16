@@ -11,6 +11,10 @@ export async function GET(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.redirect(`${appUrl}/connections?mock_google=true`)
+  }
+
   // Handle OAuth errors
   if (error) {
     return NextResponse.redirect(

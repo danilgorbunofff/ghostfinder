@@ -10,6 +10,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    return NextResponse.json({ linkToken: 'mock-link-token-dev-only' })
+  }
+
   try {
     const linkToken = await createLinkToken(user.id)
     return NextResponse.json({ linkToken })

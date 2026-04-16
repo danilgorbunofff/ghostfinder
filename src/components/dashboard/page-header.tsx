@@ -47,22 +47,23 @@ export function PageHeader({ userEmail, orgName }: PageHeaderProps) {
   }
 
   return (
-    <header className="flex items-center justify-between border-b bg-background/80 backdrop-blur-sm px-6 py-3 sticky top-0 z-30">
+    <header className="relative flex items-center justify-between border-b border-foreground/5 bg-background/70 backdrop-blur-xl px-6 py-3 sticky top-0 z-30 after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-gradient-to-r after:from-transparent after:via-brand/40 after:to-transparent">
       <div>
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
           <Link href="/" className="hover:text-foreground transition-colors">
             {orgName}
           </Link>
-          <span>/</span>
+          <span className="opacity-40">/</span>
           <span className="text-foreground font-medium">{pageTitle}</span>
         </nav>
         <h1 className="text-xl font-semibold tracking-tight">{pageTitle}</h1>
       </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="relative h-9 w-9 rounded-full focus:outline-none">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-brand text-brand-foreground text-xs font-semibold">
+        <DropdownMenuTrigger className="relative h-9 w-9 rounded-full focus:outline-none group">
+          <div className="absolute inset-0 rounded-full bg-brand/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Avatar className="relative h-9 w-9 ring-2 ring-brand/20 group-hover:ring-brand/40 transition-all">
+            <AvatarFallback className="bg-gradient-to-br from-brand to-brand-hover text-brand-foreground text-xs font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>

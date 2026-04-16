@@ -22,6 +22,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
   }
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL
+    return NextResponse.json({ url: `${origin}/billing?mock_checkout=true` })
+  }
+
   // Get user's org
   const admin = createAdminClient()
   const { data: membership } = await admin

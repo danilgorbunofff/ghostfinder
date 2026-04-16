@@ -8,6 +8,11 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (process.env.MOCK_SERVICES === 'true') {
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL
+    return NextResponse.json({ url: `${origin}/billing?mock_portal=true` })
+  }
+
   const admin = createAdminClient()
 
   // Get user's org

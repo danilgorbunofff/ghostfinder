@@ -3,7 +3,8 @@
 import { useCallback, useState } from 'react'
 import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from 'react-plaid-link'
 import { Button } from '@/components/ui/button'
-import { Loader2, Building2 } from 'lucide-react'
+import { Loader2, Building2, ArrowRight } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function PlaidLinkButton({ onSuccess }: { onSuccess?: () => void }) {
   const [linkToken, setLinkToken] = useState<string | null>(null)
@@ -44,11 +45,20 @@ export function PlaidLinkButton({ onSuccess }: { onSuccess?: () => void }) {
 
         const data = await res.json()
         if (data.success) {
+          toast.success('Bank account connected', {
+            description: `${metadata.institution?.name ?? 'Account'} linked successfully`,
+          })
           onSuccess?.()
         } else {
+          toast.error('Failed to connect account', {
+            description: data.error || 'Please try again',
+          })
           setError(data.error || 'Failed to connect account')
         }
       } catch {
+        toast.error('Connection failed', {
+          description: 'Could not save the bank connection',
+        })
         setError('Failed to save connection')
       } finally {
         setLoading(false)
@@ -68,22 +78,24 @@ export function PlaidLinkButton({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <div>
       {!linkToken ? (
-        <Button onClick={fetchLinkToken} disabled={loading}>
+        <Button onClick={fetchLinkToken} disabled={loading} className="group/btn gap-2">
           {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Building2 className="mr-2 h-4 w-4" />
+            <Building2 className="h-4 w-4" />
           )}
           Connect Bank Account
+          <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />
         </Button>
       ) : (
-        <Button onClick={() => open()} disabled={!ready || loading}>
+        <Button onClick={() => open()} disabled={!ready || loading} className="group/btn gap-2">
           {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Building2 className="mr-2 h-4 w-4" />
+            <Building2 className="h-4 w-4" />
           )}
           Open Bank Login
+          <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />
         </Button>
       )}
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
