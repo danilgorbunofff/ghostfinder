@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Loader2, Shield, CreditCard } from 'lucide-react'
+import { Shield, CreditCard } from 'lucide-react'
 import { useDevAction } from './use-dev-action'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'

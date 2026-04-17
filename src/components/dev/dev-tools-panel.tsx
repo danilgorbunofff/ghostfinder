@@ -15,12 +15,13 @@ export default function DevToolsPanel() {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<string | number>('data')
 
-  // Persist open/tab state
+  // Restore persisted panel state after hydration
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const { open: o, tab: t } = JSON.parse(saved)
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe localStorage restore
         if (typeof o === 'boolean') setOpen(o)
         if (typeof t === 'string') setTab(t)
       }

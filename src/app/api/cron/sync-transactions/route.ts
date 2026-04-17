@@ -33,6 +33,13 @@ export async function GET(request: Request) {
       const connectionResult = { connectionId: connection.id, added: 0, errors: [] as string[] }
 
       try {
+        // Skip external API calls for mock connections (no real vault token)
+        if (connection.item_id?.startsWith('mock_') || connection.item_id?.startsWith('dev_')) {
+          await recalculateVendorAggregates(admin, connection.org_id)
+          results.push(connectionResult)
+          continue
+        }
+
         await admin
           .from('plaid_connections')
           .update({ status: 'syncing' })
@@ -133,6 +140,13 @@ export async function GET(request: Request) {
         const gcResult = { connectionId: gc.id, added: 0, errors: [] as string[] }
 
         try {
+          // Skip external API calls for mock connections
+          if (gc.account_id?.startsWith('mock_') || gc.account_id?.startsWith('dev_')) {
+            await recalculateVendorAggregates(admin, gc.org_id)
+            results.push(gcResult)
+            continue
+          }
+
           // Check PSD2 expiry
           if (gc.expires_at && new Date(gc.expires_at) < new Date()) {
             await admin

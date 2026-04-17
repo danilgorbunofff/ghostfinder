@@ -66,6 +66,37 @@ function getRowStatusClass(status: 'active' | 'inactive' | 'warning'): string {
 type SortKey = 'name' | 'monthlyCost' | 'seats' | 'status'
 type SortDir = 'asc' | 'desc'
 
+function SortHeader({ label, column, align, sortKey, sortDir, onSort }: {
+  label: string
+  column: SortKey
+  align?: 'right'
+  sortKey: SortKey
+  sortDir: SortDir
+  onSort: (key: SortKey) => void
+}) {
+  const isActive = sortKey === column
+  const Icon = !isActive ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown
+  return (
+    <TableHead
+      className="cursor-pointer select-none hover:text-foreground transition-colors"
+      onClick={() => onSort(column)}
+      tabIndex={0}
+      role="button"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSort(column)
+        }
+      }}
+    >
+      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+        {label}
+        <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+      </div>
+    </TableHead>
+  )
+}
+
 interface VendorTableProps {
   vendors: VendorRow[]
   totalSpend: number
@@ -103,30 +134,6 @@ export function VendorTable({ vendors, totalSpend, onVendorClick }: VendorTableP
     })
   }, [vendors, sortKey, sortDir])
 
-  function SortHeader({ label, column, align }: { label: string; column: SortKey; align?: 'right' }) {
-    const isActive = sortKey === column
-    const Icon = !isActive ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown
-    return (
-      <TableHead
-        className="cursor-pointer select-none hover:text-foreground transition-colors"
-        onClick={() => handleSort(column)}
-        tabIndex={0}
-        role="button"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleSort(column)
-          }
-        }}
-      >
-        <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
-          {label}
-          <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
-        </div>
-      </TableHead>
-    )
-  }
-
   if (!vendors.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
@@ -145,11 +152,11 @@ export function VendorTable({ vendors, totalSpend, onVendorClick }: VendorTableP
     <Table data-testid="vendor-table">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
-          <SortHeader label="Vendor" column="name" />
-          <SortHeader label="Monthly Cost" column="monthlyCost" align="right" />
-          <SortHeader label="Seats" column="seats" align="right" />
+          <SortHeader label="Vendor" column="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          <SortHeader label="Monthly Cost" column="monthlyCost" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+          <SortHeader label="Seats" column="seats" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           <TableHead>Last Activity</TableHead>
-          <SortHeader label="Status" column="status" />
+          <SortHeader label="Status" column="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
           <TableHead className="w-10" />
         </TableRow>
       </TableHeader>

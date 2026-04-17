@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Loader2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function GoogleConnectButton() {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,6 +22,19 @@ export function GoogleConnectButton() {
 
       const data = await res.json()
       if (data.authorizationUrl) {
+        // In mock mode the URL points back to /connections with success param
+        try {
+          const url = new URL(data.authorizationUrl, window.location.origin)
+          if (url.pathname === '/connections' && url.searchParams.has('success')) {
+            toast.success('Google Workspace connected', {
+              description: 'User data will be synced shortly',
+            })
+            router.refresh()
+            return
+          }
+        } catch {
+          // URL parsing failed — fall through to redirect
+        }
         toast.info('Redirecting to Google...', {
           description: 'Complete the authorization in the new page',
         })

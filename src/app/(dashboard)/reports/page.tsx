@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, ArrowRight, Building2, Copy, Download, Ghost, Lightbulb, Shield, Sparkles, TrendingDown } from 'lucide-react'
+import { ArrowRight, Building2, Copy, Download, Ghost, Lightbulb, Shield, Sparkles, TrendingDown } from 'lucide-react'
 import { ReportSelector } from '@/components/reports/report-selector'
 import { GhostSeatCard } from '@/components/reports/ghost-seat-card'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Waste Reports | GhostFinder',

@@ -92,48 +92,30 @@ CREATE TRIGGER set_updated_at_saas_vendors
 -- Plaid Connections: org members can view, admins can manage
 CREATE POLICY "plaid_select_own" ON public.plaid_connections
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "plaid_insert_admin" ON public.plaid_connections
   FOR INSERT TO authenticated
-  WITH CHECK (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "plaid_update_admin" ON public.plaid_connections
   FOR UPDATE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "plaid_delete_admin" ON public.plaid_connections
   FOR DELETE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- Transactions: org members can view (insert/update handled by service role)
 CREATE POLICY "transactions_select_own" ON public.transactions
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- SaaS Vendors: org members can view, admins can manage
 CREATE POLICY "vendors_select_own" ON public.saas_vendors
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "vendors_manage_admin" ON public.saas_vendors
   FOR ALL TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));

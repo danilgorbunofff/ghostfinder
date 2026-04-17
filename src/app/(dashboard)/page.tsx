@@ -6,6 +6,8 @@ import { SpendChart } from '@/components/dashboard/spend-chart'
 import { VendorBreakdown } from '@/components/dashboard/vendor-breakdown'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Dashboard | GhostFinder',
   description: 'Overview of your SaaS spend, waste, and optimization opportunities.',

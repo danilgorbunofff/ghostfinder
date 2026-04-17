@@ -3,20 +3,17 @@ import { PlaidLinkButton } from '@/components/connections/plaid-link-button'
 import { GoCardlessConnectButton } from '@/components/connections/gocardless-connect-button'
 import { OktaConnectButton } from '@/components/connections/okta-connect-button'
 import { GoogleConnectButton } from '@/components/connections/google-connect-button'
+import { DisconnectMenu } from '@/components/connections/disconnect-dialog'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Building2, Shield, RefreshCw, AlertCircle, Globe, Plus } from 'lucide-react'
+import { RefreshCw, AlertCircle, Globe, Plus } from 'lucide-react'
 import { PlaidLogo, OktaLogo, GoogleLogo, GoCardlessLogo } from '@/components/connections/provider-logos'
 import { OnboardingProgress } from '@/components/connections/onboarding-progress'
 import { ConnectionStats } from '@/components/connections/connection-stats'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Connections | GhostFinder',
@@ -55,6 +52,8 @@ export default async function ConnectionsPage({
 }) {
   const { success, error: urlError } = await searchParams
   const supabase = await createClient()
+
+  await supabase.auth.getUser()
 
   const { data: connections } = await supabase
     .from('plaid_connections')
@@ -196,18 +195,11 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem variant="destructive" disabled>
-                            Disconnect
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <DisconnectMenu
+                        connectionId={conn.id}
+                        provider="plaid"
+                        name={conn.institution_name}
+                      />
                     </div>
                   </div>
                 )
@@ -270,18 +262,11 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem variant="destructive" disabled>
-                            Disconnect
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <DisconnectMenu
+                        connectionId={gc.id}
+                        provider="gocardless"
+                        name={gc.institution_name}
+                      />
                     </div>
                   </div>
                 )
@@ -344,18 +329,11 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem variant="destructive" disabled>
-                            Disconnect
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <DisconnectMenu
+                        connectionId={gc.id}
+                        provider="gocardless"
+                        name={gc.institution_name}
+                      />
                     </div>
                   </div>
                 )
@@ -488,18 +466,11 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem variant="destructive" disabled>
-                            Disconnect
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <DisconnectMenu
+                        connectionId={integration.id}
+                        provider={integration.provider === 'okta' ? 'okta' : 'google'}
+                        name={integration.provider === 'okta' ? 'Okta' : 'Google Workspace'}
+                      />
                     </div>
                   </div>
                 )

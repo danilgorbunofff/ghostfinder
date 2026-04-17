@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { EmptyState } from '@/components/ui/empty-state'
 import { Package } from 'lucide-react'
 import { PlaidLinkButton } from '@/components/connections/plaid-link-button'
 import { InventoryView } from './inventory-view'
 import { InventoryStats } from '@/components/dashboard/inventory-stats'
 import type { VendorRow } from '@/lib/types'
 import type { Metadata } from 'next'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'SaaS Inventory | GhostFinder',
@@ -50,16 +51,16 @@ export default async function InventoryPage() {
   if (orgId) {
     const { data: saasVendors } = await supabase
       .from('saas_vendors')
-      .select('display_name, monthly_cost, seats_paid, last_activity_at, is_active, category')
+      .select('name, monthly_cost, seats_paid, last_seen, is_active, category')
       .eq('org_id', orgId)
       .order('monthly_cost', { ascending: false })
 
     vendors = (saasVendors ?? []).map((v) => ({
-      name: v.display_name,
+      name: v.name,
       monthlyCost: Number(v.monthly_cost ?? 0),
       seats: v.seats_paid ?? 0,
-      lastActivity: formatLastActivity(v.last_activity_at),
-      status: vendorStatus(v.is_active, v.last_activity_at),
+      lastActivity: formatLastActivity(v.last_seen),
+      status: vendorStatus(v.is_active, v.last_seen),
       category: v.category ?? null,
     }))
 

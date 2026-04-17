@@ -64,27 +64,16 @@ CREATE INDEX idx_transactions_source ON public.transactions(org_id, source);
 
 CREATE POLICY "gc_select_own" ON public.gocardless_connections
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "gc_insert_admin" ON public.gocardless_connections
   FOR INSERT TO authenticated
-  WITH CHECK (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "gc_update_admin" ON public.gocardless_connections
   FOR UPDATE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "gc_delete_admin" ON public.gocardless_connections
   FOR DELETE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));

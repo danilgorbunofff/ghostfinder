@@ -13,7 +13,9 @@ BEGIN
     id, instance_id, email, encrypted_password,
     email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
     aud, role, created_at, updated_at,
-    confirmation_token, email_change_token_new, recovery_token
+    confirmation_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    recovery_token
   ) VALUES (
     v_user_id,
     '00000000-0000-0000-0000-000000000000',
@@ -23,7 +25,8 @@ BEGIN
     '{"provider": "email", "providers": ["email"]}',
     '{"full_name": "Dev User"}',
     'authenticated', 'authenticated',
-    now(), now(), '', '', ''
+    now(), now(), '', '', '',
+    '', '', '', ''
   ) ON CONFLICT (id) DO NOTHING;
 
   -- ── 2. Resolve the org the trigger created ────────────────────────────────
@@ -145,19 +148,29 @@ BEGIN
   -- ── 9. Waste report ───────────────────────────────────────────────────────
   INSERT INTO public.waste_reports (
     org_id, total_monthly_waste, total_annual_waste,
-    ghost_seat_count, duplicate_count, ghost_seats, duplicates, generated_at
+    ghost_seat_count, duplicate_count, opportunity_count, ghost_seats, duplicates, generated_at
   ) VALUES (
-    v_org_id, 3845.00, 46140.00, 5, 2,
+    v_org_id, 1455.00, 17460.00, 22, 2, 5,
     '[
-      {"user": "carol@ghostfinder.co",  "name": "Carol White",    "tools": ["Slack","Figma","Notion"],     "monthly_cost": 1735.00, "last_login_days": 45},
-      {"user": "dave@ghostfinder.co",   "name": "Dave Brown",     "tools": ["Slack","Jira"],               "monthly_cost": 1255.00, "last_login_days": 60},
-      {"user": "frank@ghostfinder.co",  "name": "Frank Wilson",   "tools": ["Salesforce","HubSpot"],       "monthly_cost": 3290.00, "last_login_days": 90},
-      {"user": "henry@ghostfinder.co",  "name": "Henry Martinez", "tools": ["Zoom","Asana"],               "monthly_cost":  740.00, "last_login_days": 55},
-      {"user": "jake@ghostfinder.co",   "name": "Jake Anderson",  "tools": ["GitHub","Notion"],            "monthly_cost":  530.00, "last_login_days": 75}
+      {"vendor": "Slack",  "monthlyWaste": 125, "activeSeats": 25, "totalSeats": 35, "ghostSeats": 10, "inactiveUsers": [
+        {"email": "carol@ghostfinder.co", "daysSinceLogin": 45, "source": "okta"},
+        {"email": "dave@ghostfinder.co",  "daysSinceLogin": 60, "source": "okta"},
+        {"email": "frank@ghostfinder.co", "daysSinceLogin": 90, "source": "google_workspace"},
+        {"email": "henry@ghostfinder.co", "daysSinceLogin": 55, "source": "okta"},
+        {"email": "jake@ghostfinder.co",  "daysSinceLogin": 75, "source": "google_workspace"}
+      ]},
+      {"vendor": "Figma",  "monthlyWaste": 90,  "activeSeats": 12, "totalSeats": 18, "ghostSeats": 6, "inactiveUsers": [
+        {"email": "liam@ghostfinder.co", "daysSinceLogin": 40, "source": "okta"},
+        {"email": "noah@ghostfinder.co", "daysSinceLogin": 85, "source": "google_workspace"}
+      ]},
+      {"vendor": "Zoom",   "monthlyWaste": 60,  "activeSeats": 39, "totalSeats": 45, "ghostSeats": 6, "inactiveUsers": [
+        {"email": "dave@ghostfinder.co",  "daysSinceLogin": 60, "source": "okta"},
+        {"email": "frank@ghostfinder.co", "daysSinceLogin": 90, "source": "google_workspace"}
+      ]}
     ]'::jsonb,
     '[
-      {"vendors": ["Asana","Jira"],         "monthly_cost":  670.00, "note": "Project management overlap — 29 shared users"},
-      {"vendors": ["Salesforce","HubSpot"],  "monthly_cost": 3290.00, "note": "CRM overlap — 12 shared users"}
+      {"category": "Project Management", "potentialSavings": 290, "vendors": [{"name": "Jira", "monthlyCost": 380}, {"name": "Asana", "monthlyCost": 290}]},
+      {"category": "CRM",                "potentialSavings": 890, "vendors": [{"name": "Salesforce", "monthlyCost": 2400}, {"name": "HubSpot", "monthlyCost": 890}]}
     ]'::jsonb,
     now()
   );

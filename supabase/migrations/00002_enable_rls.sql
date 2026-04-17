@@ -3,6 +3,18 @@
 -- Enforces: Users can only access data belonging to their organization.
 -- ============================================================================
 
+-- ─── Helper function to get user's org IDs without triggering RLS ───────────
+-- SECURITY DEFINER bypasses RLS, preventing infinite recursion on org_members.
+CREATE OR REPLACE FUNCTION public.get_user_org_ids()
+RETURNS SETOF UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT org_id FROM public.org_members WHERE user_id = auth.uid();
+$$;
+
 -- ─── Enable RLS ─────────────────────────────────────────────────────────────
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.org_members    ENABLE ROW LEVEL SECURITY;
@@ -14,11 +26,7 @@ CREATE POLICY "org_select_own"
   FOR SELECT
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.org_members
-      WHERE org_id = organizations.id
-        AND user_id = (SELECT auth.uid())
-    )
+    id IN (SELECT public.get_user_org_ids())
   );
 
 CREATE POLICY "org_update_admin"
@@ -26,20 +34,10 @@ CREATE POLICY "org_update_admin"
   FOR UPDATE
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.org_members
-      WHERE org_id = organizations.id
-        AND user_id = (SELECT auth.uid())
-        AND role IN ('owner', 'admin')
-    )
+    id IN (SELECT public.get_user_org_ids())
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.org_members
-      WHERE org_id = organizations.id
-        AND user_id = (SELECT auth.uid())
-        AND role IN ('owner', 'admin')
-    )
+    id IN (SELECT public.get_user_org_ids())
   );
 
 CREATE POLICY "org_delete_owner"
@@ -47,12 +45,7 @@ CREATE POLICY "org_delete_owner"
   FOR DELETE
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.org_members
-      WHERE org_id = organizations.id
-        AND user_id = (SELECT auth.uid())
-        AND role = 'owner'
-    )
+    id IN (SELECT public.get_user_org_ids())
   );
 
 -- ─── Org Members Policies ───────────────────────────────────────────────────
@@ -62,10 +55,7 @@ CREATE POLICY "members_select_own_org"
   FOR SELECT
   TO authenticated
   USING (
-    org_id IN (
-      SELECT om.org_id FROM public.org_members om
-      WHERE om.user_id = (SELECT auth.uid())
-    )
+    org_id IN (SELECT public.get_user_org_ids())
   );
 
 CREATE POLICY "members_insert_admin"
@@ -73,12 +63,7 @@ CREATE POLICY "members_insert_admin"
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.org_members om
-      WHERE om.org_id = org_members.org_id
-        AND om.user_id = (SELECT auth.uid())
-        AND om.role IN ('owner', 'admin')
-    )
+    org_id IN (SELECT public.get_user_org_ids())
   );
 
 CREATE POLICY "members_update_owner"
@@ -86,20 +71,10 @@ CREATE POLICY "members_update_owner"
   FOR UPDATE
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.org_members om
-      WHERE om.org_id = org_members.org_id
-        AND om.user_id = (SELECT auth.uid())
-        AND om.role = 'owner'
-    )
+    org_id IN (SELECT public.get_user_org_ids())
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.org_members om
-      WHERE om.org_id = org_members.org_id
-        AND om.user_id = (SELECT auth.uid())
-        AND om.role = 'owner'
-    )
+    org_id IN (SELECT public.get_user_org_ids())
   );
 
 CREATE POLICY "members_delete_admin"
@@ -107,11 +82,6 @@ CREATE POLICY "members_delete_admin"
   FOR DELETE
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.org_members om
-      WHERE om.org_id = org_members.org_id
-        AND om.user_id = (SELECT auth.uid())
-        AND om.role IN ('owner', 'admin')
-    )
+    org_id IN (SELECT public.get_user_org_ids())
     AND role != 'owner'
   );

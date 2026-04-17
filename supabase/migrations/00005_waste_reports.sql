@@ -32,9 +32,7 @@ CREATE INDEX idx_waste_reports_latest ON public.waste_reports(org_id, generated_
 -- Org members can view their reports
 CREATE POLICY "reports_select_own" ON public.waste_reports
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- Reports are created by service_role (cron job) only.
 -- No INSERT policy for authenticated — this is by design.

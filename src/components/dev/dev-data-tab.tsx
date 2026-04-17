@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Loader2, Database, Trash2, Shuffle } from 'lucide-react'
+import { Loader2, Database, Shuffle, RotateCcw } from 'lucide-react'
 import { useDevAction } from './use-dev-action'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -65,16 +65,17 @@ export function DevDataTab() {
         <div className="space-y-1.5">
           <Button
             size="sm"
-            variant="outline"
-            className="w-full justify-start gap-2 h-7 text-xs text-destructive hover:text-destructive"
+            variant="destructive"
+            className="w-full justify-start gap-2 h-7 text-xs"
             disabled={loading === 'reset-data'}
             onClick={async () => {
+              if (!confirm('Delete ALL project data? This clears every bank connection, integration, transaction, vendor, and usage record and resets the subscription to free. This cannot be undone.')) return
               const r = await run({ action: 'reset-data' })
               if (r) toast.success(r.message)
             }}
           >
-            {loading === 'reset-data' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-            Reset All Data
+            {loading === 'reset-data' ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+            Delete All Data (Start Fresh)
           </Button>
           <div className="flex items-center gap-1.5">
             <select

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useSyncExternalStore, useCallback } from 'react'
 import { VendorFilters, type StatusFilter, type CostRange, type ViewMode } from '@/components/dashboard/vendor-filters'
 import { VendorTable } from '@/components/dashboard/vendor-table'
 import { VendorGrid } from '@/components/dashboard/vendor-grid'
@@ -18,17 +18,23 @@ export function InventoryView({
   const [status, setStatus] = useState<StatusFilter>('all')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [costRange, setCostRange] = useState<CostRange>('all')
-  const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [selectedVendor, setSelectedVendor] = useState<VendorRow | null>(null)
 
-  // Persist view mode
-  useEffect(() => {
-    const saved = localStorage.getItem('inventory-view-mode')
-    if (saved === 'grid' || saved === 'table') setViewMode(saved)
+  // Read persisted view mode from localStorage
+  const storageSubscribe = useCallback((cb: () => void) => {
+    window.addEventListener('storage', cb)
+    return () => window.removeEventListener('storage', cb)
   }, [])
+  const savedViewMode = useSyncExternalStore(
+    storageSubscribe,
+    () => localStorage.getItem('inventory-view-mode'),
+    () => null,
+  )
+  const [viewModeOverride, setViewModeOverride] = useState<ViewMode | null>(null)
+  const viewMode = (viewModeOverride ?? (savedViewMode === 'grid' ? 'grid' : 'table')) as ViewMode
 
   function handleViewModeChange(mode: ViewMode) {
-    setViewMode(mode)
+    setViewModeOverride(mode)
     localStorage.setItem('inventory-view-mode', mode)
   }
 

@@ -90,37 +90,24 @@ CREATE TRIGGER set_updated_at_user_activity
 -- Integration Connections
 CREATE POLICY "integrations_select_own" ON public.integration_connections
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "integrations_insert_admin" ON public.integration_connections
   FOR INSERT TO authenticated
-  WITH CHECK (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "integrations_update_admin" ON public.integration_connections
   FOR UPDATE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "integrations_delete_admin" ON public.integration_connections
   FOR DELETE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members
-    WHERE user_id = (SELECT auth.uid()) AND role IN ('owner', 'admin')
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- User Activity
 CREATE POLICY "user_activity_select_own" ON public.user_activity
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- User activity is managed by service_role (cron jobs).
 -- No direct insert/update/delete by authenticated users.

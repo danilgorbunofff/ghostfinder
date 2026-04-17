@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -64,6 +65,7 @@ interface Institution {
 }
 
 export function GoCardlessConnectButton({ onSuccess }: { onSuccess?: () => void }) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [country, setCountry] = useState('')
   const [institutions, setInstitutions] = useState<Institution[]>([])
@@ -128,6 +130,7 @@ export function GoCardlessConnectButton({ onSuccess }: { onSuccess?: () => void 
           toast.success('EU Bank connected', { description: institution.name })
           setOpen(false)
           onSuccess?.()
+          router.refresh()
         } else {
           window.location.href = data.link
         }

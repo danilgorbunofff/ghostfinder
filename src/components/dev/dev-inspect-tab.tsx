@@ -27,6 +27,7 @@ export function DevInspectTab() {
     if (r?.state) setState(r.state)
   }, [run])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on mount
   useEffect(() => { refresh() }, [refresh])
 
   if (!state) {

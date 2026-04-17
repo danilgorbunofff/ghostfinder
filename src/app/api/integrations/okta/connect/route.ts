@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyOktaConnection } from '@/lib/services/okta.service'
 import { ensureOrganization } from '@/lib/supabase/ensure-org'
+import { triggerScanIfReady } from '@/lib/reconciliation/trigger-if-ready'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -35,7 +37,31 @@ export async function POST(request: Request) {
   }
 
   if (process.env.MOCK_SERVICES === 'true') {
-    return NextResponse.json({ success: true, message: 'Mock mode: Okta connection accepted' })
+    // Ensure org exists even in mock mode so we can insert a row
+    const membership = await ensureOrganization(user.id, user.email ?? undefined)
+
+    const admin = createAdminClient()
+
+    await admin.from('integration_connections').upsert({
+      org_id: membership.orgId,
+      provider: 'okta',
+      is_active: true,
+      total_users: 30,
+      active_users: 22,
+      inactive_users: 8,
+      last_synced_at: new Date().toISOString(),
+      metadata: { orgUrl, domain: new URL(orgUrl).hostname },
+      error_message: null,
+    }, { onConflict: 'org_id,provider' })
+
+    // Seed user activity so reports/ghost-seat detection works
+    const { seedMockUserActivity } = await import('@/lib/utils/mock-seed')
+    await seedMockUserActivity(admin, membership.orgId, 'okta')
+
+    await triggerScanIfReady(admin, membership.orgId)
+
+    revalidatePath('/', 'layout')
+    return NextResponse.json({ success: true })
   }
 
   try {
@@ -88,6 +114,8 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+
+    await triggerScanIfReady(admin, membership.orgId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

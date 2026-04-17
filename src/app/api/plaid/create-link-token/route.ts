@@ -19,7 +19,7 @@ export async function POST() {
   }
 
   if (process.env.MOCK_SERVICES === 'true') {
-    return NextResponse.json({ linkToken: 'mock-link-token-dev-only' })
+    return NextResponse.json({ linkToken: null, mockMode: true })
   }
 
   try {

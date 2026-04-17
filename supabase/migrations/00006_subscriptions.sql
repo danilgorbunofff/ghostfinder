@@ -91,32 +91,22 @@ CREATE INDEX idx_notification_log_org_id ON public.notification_log(org_id, sent
 -- Subscriptions: Org members can read, only service_role can modify
 CREATE POLICY "subscriptions_select_own" ON public.subscriptions
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 -- Notification settings: Org members can read and update
 CREATE POLICY "notification_settings_select_own" ON public.notification_settings
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "notification_settings_update_own" ON public.notification_settings
   FOR UPDATE TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));
 
 CREATE POLICY "notification_settings_insert_own" ON public.notification_settings
   FOR INSERT TO authenticated
-  WITH CHECK (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
 
 -- Notification log: Org members can read
 CREATE POLICY "notification_log_select_own" ON public.notification_log
   FOR SELECT TO authenticated
-  USING (org_id IN (
-    SELECT org_id FROM public.org_members WHERE user_id = (SELECT auth.uid())
-  ));
+  USING (org_id IN (SELECT public.get_user_org_ids()));

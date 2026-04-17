@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +13,7 @@ import { Loader2, Shield, HelpCircle, ChevronDown, ArrowRight } from 'lucide-rea
 import { toast } from 'sonner'
 
 export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
+  const router = useRouter()
   const [orgUrl, setOrgUrl] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,6 +40,7 @@ export function OktaConnectButton({ onSuccess }: { onSuccess?: () => void }) {
         })
         setOpen(false)
         onSuccess?.()
+        router.refresh()
       } else {
         toast.error('Failed to connect Okta', {
           description: data.error || 'Please check your credentials',

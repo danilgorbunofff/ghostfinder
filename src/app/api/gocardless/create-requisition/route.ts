@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createRequisition, EU_EEA_COUNTRIES } from '@/lib/services/gocardless.service'
 import { ensureOrganization } from '@/lib/supabase/ensure-org'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 const VALID_COUNTRY_CODES = new Set(EU_EEA_COUNTRIES.map((c) => c.code))
@@ -68,6 +69,12 @@ export async function POST(request: Request) {
       .select('id')
       .single()
 
+    // Seed vendor + transaction data so inventory page is populated
+    const { seedMockVendors, seedMockTransactions } = await import('@/lib/utils/mock-seed')
+    await seedMockVendors(admin, membership.orgId)
+    await seedMockTransactions(admin, membership.orgId)
+
+    revalidatePath('/', 'layout')
     return NextResponse.json({
       link: `${process.env.NEXT_PUBLIC_APP_URL}/connections?mock_gocardless=true`,
       requisitionId: 'mock_req_id',

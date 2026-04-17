@@ -46,6 +46,44 @@ export async function GET(request: Request) {
       }
 
       try {
+        // Skip external API calls for mock connections (no real vault token)
+        if (!connection.access_token_secret_id) {
+          // Still update stats from existing user_activity rows
+          const { count: activeCount } = await admin
+            .from('user_activity')
+            .select('*', { count: 'exact', head: true })
+            .eq('org_id', connection.org_id)
+            .eq('provider', connection.provider)
+            .eq('status', 'active')
+
+          const { count: inactiveCount } = await admin
+            .from('user_activity')
+            .select('*', { count: 'exact', head: true })
+            .eq('org_id', connection.org_id)
+            .eq('provider', connection.provider)
+            .neq('status', 'active')
+
+          const total = (activeCount ?? 0) + (inactiveCount ?? 0)
+          if (total > 0) {
+            await admin
+              .from('integration_connections')
+              .update({
+                last_synced_at: new Date().toISOString(),
+                total_users: total,
+                active_users: activeCount ?? 0,
+                inactive_users: inactiveCount ?? 0,
+                error_message: null,
+              })
+              .eq('id', connection.id)
+          }
+
+          result.usersProcessed = total
+          result.activeUsers = activeCount ?? 0
+          result.inactiveUsers = inactiveCount ?? 0
+          results.push(result)
+          continue
+        }
+
         let users: {
           email: string
           displayName: string | null

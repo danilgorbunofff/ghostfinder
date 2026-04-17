@@ -303,21 +303,28 @@ async function seedDemoData(admin: any, orgId: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resetOrgData(admin: any, orgId: string) {
+  // All org-scoped tables — order respects FK constraints (children before parents)
   const tables = [
-    'notification_log', 'waste_reports', 'user_activity',
-    'integration_connections', 'transactions', 'saas_vendors',
+    'notification_log',
+    'waste_reports',
+    'user_activity',
+    'integration_connections',
+    'transactions',
+    'saas_vendors',
+    'gocardless_connections',
     'plaid_connections',
+    'notification_settings',
   ]
   for (const t of tables) {
     await admin.from(t).delete().eq('org_id', orgId)
   }
-  // Reset subscription to free
+  // Reset subscription to free tier
   await admin.from('subscriptions').upsert({
     org_id: orgId, stripe_customer_id: 'cus_dev_tools',
     tier: 'free', status: 'active', verified_annual_savings: 0,
   }, { onConflict: 'org_id' })
 
-  return NextResponse.json({ success: true, message: 'All org data reset' })
+  return NextResponse.json({ success: true, message: 'Project reset — all data cleared, back to free tier' })
 }
 
 const TX_VENDORS = ['SLACK TECH', 'NOTION LABS', 'FIGMA INC', 'GITHUB INC', 'ZOOM VIDEO', 'ATLASSIAN', 'SALESFORCE', 'HUBSPOT', 'ASANA INC', 'DROPBOX INC', 'AWS', 'ADOBE SYSTEMS', 'MICROSOFT', 'GOOGLE CLOUD', 'DATADOG']
