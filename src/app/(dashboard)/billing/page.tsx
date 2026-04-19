@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertAction } from '@/components/ui/alert'
 import {
@@ -10,12 +9,15 @@ import {
 import { AlertTriangle } from 'lucide-react'
 import { ManageButton } from '@/components/billing/manage-button'
 import { BillingToggle } from './billing-toggle'
+import { getServerOrgContext } from '@/lib/supabase/server-org'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Billing | GhostFinder',
   description: 'Manage your subscription and billing preferences.',
 }
+
+export const dynamic = 'force-dynamic'
 
 const PLANS = [
   {
@@ -76,41 +78,51 @@ const PLANS = [
 
 const FAQ_ITEMS = [
   {
-    q: 'Can I downgrade my plan?',
+    q: 'What is a ghost seat?',
+    a: 'A ghost seat is a paid software license assigned to a user who is no longer active — they haven\'t logged in or used the tool within a defined period. You\'re paying for access nobody is using.',
+  },
+  {
+    q: 'How does the Monitor plan work?',
+    a: 'The Monitor plan continuously scans your connected bank accounts and identity providers to detect SaaS waste. You get weekly reports highlighting ghost seats, duplicate subscriptions, and spending trends.',
+  },
+  {
+    q: 'Can I downgrade later?',
     a: 'Yes. Go to Manage Subscription and switch to a lower tier. Your current plan features will remain active until the end of the billing period.',
   },
   {
-    q: 'What happens to my data if I cancel?',
-    a: 'Your data is retained for 30 days after cancellation. You can re-subscribe at any time during this period to regain access.',
-  },
-  {
-    q: 'How does Recovery plan pricing work?',
-    a: "The Recovery plan charges a percentage of verified savings. We only bill when we can prove ROI — if we don't find savings, you don't pay.",
-  },
-  {
-    q: 'Do you offer refunds?',
-    a: "We offer a full refund within the first 14 days if you're not satisfied. Contact support@ghostfinder.app to request one.",
+    q: 'How is billing handled?',
+    a: 'We use Stripe for secure payment processing. Monitor plans are billed monthly or annually. Recovery plans charge a percentage of verified savings — if we don\'t find waste, you don\'t pay.',
   },
 ]
 
 export default async function BillingPage() {
-  const supabase = await createClient()
+  const { admin, orgId } = await getServerOrgContext()
 
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await admin
     .from('subscriptions')
     .select('*')
-    .single()
+    .eq('org_id', orgId)
+    .maybeSingle()
+
+  if (subscriptionError) {
+    throw new Error(`Failed to load subscription: ${subscriptionError.message}`)
+  }
 
   const currentTier = subscription?.tier ?? 'free'
   const isPaidPlan = currentTier !== 'free'
 
   // Fetch usage stats for current plan display
-  const { data: latestReport } = await supabase
+  const { data: latestReport, error: latestReportError } = await admin
     .from('waste_reports')
     .select('ghost_seat_count, report_metadata')
+    .eq('org_id', orgId)
     .order('generated_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
+
+  if (latestReportError) {
+    throw new Error(`Failed to load latest report: ${latestReportError.message}`)
+  }
 
   const usage = latestReport
     ? {
@@ -129,7 +141,7 @@ export default async function BillingPage() {
 
       {/* Past-due Warning Banner */}
       {subscription?.status === 'past_due' && (
-        <Alert variant="destructive" className="sticky top-0 z-20 border-l-4 border-l-red-500 animate-fade-in-up">
+        <Alert variant="destructive" className="sticky top-0 z-20 border-l-4 border-l-red-500 animate-fade-in-up" data-testid="past-due-banner">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
             <AlertTriangle className="h-4 w-4" />

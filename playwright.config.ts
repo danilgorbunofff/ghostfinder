@@ -34,6 +34,7 @@ export default defineConfig({
       name: 'teardown',
       testMatch: /global\.teardown\.ts/,
       testDir: './e2e',
+      dependencies: ['chromium', 'firefox', 'webkit', 'mobile-chrome'],
     },
     {
       name: 'chromium',

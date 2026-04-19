@@ -45,7 +45,9 @@ export default function RootLayout({
             closeButton
             toastOptions={{
               duration: 4000,
+              className: 'z-[10000]',
             }}
+            style={{ zIndex: 10000 }}
           />
         </ThemeProvider>
       </body>

@@ -44,7 +44,7 @@ export function DevAuthTab() {
                 const r = await run({ action: 'switch-role', role })
                 if (r) {
                   setCurrentRole(role)
-                  toast.success(`Role → ${role}`)
+                  toast.success(r.message ?? `Role -> ${role}`)
                 }
               }}
             >
@@ -74,7 +74,7 @@ export function DevAuthTab() {
                 const r = await run({ action: 'switch-tier', tier })
                 if (r) {
                   setCurrentTier(tier)
-                  toast.success(`Tier → ${tier}`)
+                  toast.success(r.message ?? `Tier -> ${tier}`)
                 }
               }}
             >

@@ -22,10 +22,14 @@ export function ProfileSection({ user }: ProfileSectionProps) {
   const initials = email.slice(0, 2).toUpperCase()
 
   async function handleSave() {
+    if (!displayName.trim()) {
+      toast.error('Display name is required')
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/settings/profile', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName }),
       })
@@ -76,6 +80,7 @@ export function ProfileSection({ user }: ProfileSectionProps) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Your name"
+              data-testid="display-name"
             />
           </div>
 

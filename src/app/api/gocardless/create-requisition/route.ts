@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid country code' }, { status: 400 })
   }
 
-  let membership: { orgId: string; role: string }
+  let membership: { orgId: string; role: 'owner' | 'admin' | 'member' | 'viewer' }
   try {
     membership = await ensureOrganization(user.id, user.email ?? undefined)
   } catch {
@@ -40,14 +40,7 @@ export async function POST(request: Request) {
 
   // Check admin/owner role
   const admin = createAdminClient()
-  const { data: member } = await admin
-    .from('org_members')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('org_id', membership.orgId)
-    .single()
-
-  if (!member || !['owner', 'admin'].includes(member.role)) {
+  if (!['owner', 'admin'].includes(membership.role)) {
     return NextResponse.json({ error: 'Admin or owner role required' }, { status: 403 })
   }
 

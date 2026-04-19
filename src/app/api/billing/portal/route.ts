@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { createBillingPortalSession } from '@/lib/services/stripe.service'
 import { NextResponse } from 'next/server'
 
@@ -14,22 +15,21 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient()
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
-  // Get user's org
-  const { data: membership } = await admin
-    .from('org_members')
-    .select('org_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+  // Only owner/admin can manage billing
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    return NextResponse.json({ error: 'Only owners and admins can manage billing' }, { status: 403 })
   }
 
   const { data: subscription } = await admin
     .from('subscriptions')
     .select('stripe_customer_id')
-    .eq('org_id', membership.org_id)
+    .eq('org_id', membership.orgId)
     .single()
 
   if (!subscription?.stripe_customer_id) {

@@ -1,5 +1,6 @@
 'use client'
 
+import type { GhostSeatFinding } from '@/lib/reconciliation/ghost-detector'
 import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -7,6 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronDown } from 'lucide-react'
 import { NotifyButton } from '@/components/reports/notify-button'
+
+const lastLoginFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
 
 function severityConfig(daysSinceLogin: number) {
   if (daysSinceLogin === 999 || daysSinceLogin > 180) {
@@ -30,9 +38,13 @@ function severityConfig(daysSinceLogin: number) {
   }
 }
 
-function wasteSeverityBorder(monthlyWaste: number): string {
-  if (monthlyWaste > 200) return 'border-l-red-500'
-  if (monthlyWaste > 50) return 'border-l-orange-500'
+function wasteSeverityBorder(users: GhostSeatFinding['inactiveUsers']): string {
+  const maxDays = users.reduce((max, u) => {
+    const days = u.daysSinceLogin ?? 0
+    return days > max ? days : max
+  }, 0)
+  if (maxDays >= 90) return 'border-l-red-500'
+  if (maxDays >= 60) return 'border-l-orange-500'
   return 'border-l-amber-500'
 }
 
@@ -52,17 +64,17 @@ function getAvatarColor(name: string) {
 
 const PREVIEW_COUNT = 3
 
-export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, unknown>; index?: number }) {
+export function GhostSeatCard({ finding, index = 0 }: { finding: GhostSeatFinding; index?: number }) {
   const [expanded, setExpanded] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number>(0)
 
-  const users = (finding.inactiveUsers as Record<string, unknown>[]) ?? []
+  const users = finding.inactiveUsers ?? []
   const previewUsers = users.slice(0, PREVIEW_COUNT)
   const hiddenUsers = users.slice(PREVIEW_COUNT)
   const hiddenCount = hiddenUsers.length
-  const vendor = finding.vendor as string
-  const waste = finding.monthlyWaste as number
+  const vendor = finding.vendor
+  const waste = finding.monthlyWaste
 
   useEffect(() => {
     if (contentRef.current) {
@@ -72,7 +84,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
 
   return (
     <Card
-      className={`card-interactive animate-fade-in-up border-l-4 ${wasteSeverityBorder(waste)}`}
+      className={`card-interactive animate-fade-in-up border-l-4 ${wasteSeverityBorder(users)}`}
       style={{ animationDelay: `${index * 60}ms` }}
       data-testid="ghost-seat-card"
     >
@@ -87,7 +99,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
             <div>
               <CardTitle className="text-base">{vendor}</CardTitle>
               <CardDescription className="mt-0.5">
-                {finding.activeSeats as number} active / {finding.totalSeats as number} total ·
+                {finding.activeSeats} active / {finding.totalSeats} total ·
                 <span className="font-medium text-orange-500">
                   {' '}${waste}/mo wasted
                 </span>
@@ -96,7 +108,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
           </div>
           <Badge variant="destructive" className="gap-1.5 shrink-0">
             <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-            {finding.ghostSeats as number} ghost seats
+            {finding.ghostSeats} ghost seats
           </Badge>
         </div>
       </CardHeader>
@@ -113,14 +125,14 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
           </TableHeader>
           <TableBody>
             {previewUsers.map((user, i) => {
-              const days = user.daysSinceLogin as number
+              const days = user.daysSinceLogin
               const severity = severityConfig(days)
               return (
                 <TableRow key={i} className="hover:bg-muted/30 transition-colors border-l-2 border-l-transparent hover:border-l-brand">
-                  <TableCell className="font-medium">{user.email as string}</TableCell>
+                  <TableCell className="font-medium">{user.email}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {user.lastLogin
-                      ? new Date(user.lastLogin as string).toLocaleDateString()
+                      ? lastLoginFormatter.format(new Date(user.lastLogin))
                       : 'Never'}
                   </TableCell>
                   <TableCell>
@@ -130,7 +142,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
                     </Badge>
                   </TableCell>
                   <TableCell className="capitalize text-muted-foreground text-sm">
-                    {user.provider as string}
+                    {user.provider}
                   </TableCell>
                 </TableRow>
               )
@@ -153,14 +165,14 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
               <Table>
                 <TableBody>
                   {hiddenUsers.map((user, i) => {
-                    const days = user.daysSinceLogin as number
+                    const days = user.daysSinceLogin
                     const severity = severityConfig(days)
                     return (
                       <TableRow key={i} className="hover:bg-muted/30 transition-colors border-l-2 border-l-transparent hover:border-l-brand">
-                        <TableCell className="font-medium">{user.email as string}</TableCell>
+                        <TableCell className="font-medium">{user.email}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {user.lastLogin
-                            ? new Date(user.lastLogin as string).toLocaleDateString()
+                            ? lastLoginFormatter.format(new Date(user.lastLogin))
                             : 'Never'}
                         </TableCell>
                         <TableCell>
@@ -170,7 +182,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
                           </Badge>
                         </TableCell>
                         <TableCell className="capitalize text-muted-foreground text-sm">
-                          {user.provider as string}
+                          {user.provider}
                         </TableCell>
                       </TableRow>
                     )
@@ -194,7 +206,7 @@ export function GhostSeatCard({ finding, index = 0 }: { finding: Record<string, 
         <div className="border-t mt-3 pt-3 flex items-center justify-end">
           <NotifyButton
             vendor={vendor}
-            ghostSeats={finding.ghostSeats as number}
+            ghostSeats={finding.ghostSeats}
             monthlyWaste={waste}
           />
         </div>

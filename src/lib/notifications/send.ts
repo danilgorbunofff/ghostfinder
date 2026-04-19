@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { sendSlackNotification } from './slack'
 import { sendEmailNotification } from './email'
+import { normalizeGhostSeatFindings } from '@/lib/reports/normalize-report'
 
 /**
  * Send notifications for a waste report based on org preferences.
@@ -46,7 +47,7 @@ export async function sendReportNotifications(
   }
 
   const reportUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reports`
-  const ghostSeats = (report.ghost_seats as Record<string, unknown>[]) ?? []
+  const ghostSeats = normalizeGhostSeatFindings(report.ghost_seats)
 
   // 5. Send Slack notification
   if (settings.slack_enabled && settings.slack_webhook_url) {
@@ -56,10 +57,10 @@ export async function sendReportNotifications(
         totalAnnualWaste: Number(report.total_annual_waste),
         ghostSeatCount: report.ghost_seat_count,
         duplicateCount: report.duplicate_count,
-        topGhosts: ghostSeats.map((g: Record<string, unknown>) => ({
-          vendor: g.vendor as string,
-          ghostSeats: g.ghostSeats as number,
-          monthlyWaste: g.monthlyWaste as number,
+        topGhosts: ghostSeats.map((g) => ({
+          vendor: g.vendor,
+          ghostSeats: g.ghostSeats,
+          monthlyWaste: g.monthlyWaste,
         })),
         reportUrl,
       })

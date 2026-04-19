@@ -1,5 +1,4 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { triggerScanIfReady } from '@/lib/reconciliation/trigger-if-ready'
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { cookies } from 'next/headers'
@@ -111,8 +110,6 @@ export async function GET(request: Request) {
     if (upsertError) {
       throw new Error(`Failed to save connection: ${upsertError.message}`)
     }
-
-    await triggerScanIfReady(admin, orgId)
 
     // Clear state cookie
     const response = NextResponse.redirect(

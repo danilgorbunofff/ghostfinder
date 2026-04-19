@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { User, Building2, Bell, AlertTriangle } from 'lucide-react'
 import { ProfileSection } from '@/components/settings/profile-section'
 import { OrganizationSection } from '@/components/settings/organization-section'
 import { NotificationsSection } from '@/components/settings/notifications-section'
 import { DangerZoneSection } from '@/components/settings/danger-zone-section'
+import { getServerOrgContext } from '@/lib/supabase/server-org'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -12,35 +12,59 @@ export const metadata: Metadata = {
   description: 'Manage your profile, organization, and notification settings.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
-  const supabase = await createClient()
+  const { admin, orgId, orgName, role, user } = await getServerOrgContext()
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await admin
     .from('subscriptions')
     .select('tier, status')
-    .single()
+    .eq('org_id', orgId)
+    .maybeSingle()
 
-  const { data: notificationSettings } = await supabase
+  if (subscriptionError) {
+    throw new Error(`Failed to load subscription: ${subscriptionError.message}`)
+  }
+
+  const { data: notificationSettings, error: notificationSettingsError } = await admin
     .from('notification_settings')
     .select('*')
-    .single()
+    .eq('org_id', orgId)
+    .maybeSingle()
 
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id, role, organizations(id, name, slug)')
-    .eq('user_id', user!.id)
-    .single()
+  if (notificationSettingsError) {
+    throw new Error(`Failed to load notification settings: ${notificationSettingsError.message}`)
+  }
 
-  const { data: members } = await supabase
+  // Fetch members with emails via admin-level join
+  const { data: members, error: membersError } = await admin
     .from('org_members')
     .select('user_id, role, created_at')
-    .eq('org_id', membership?.org_id)
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: true })
+
+  if (membersError) {
+    throw new Error(`Failed to load organization members: ${membersError.message}`)
+  }
+
+  // Fetch user emails for all members
+  const memberEmails: Record<string, { email: string; display_name?: string }> = {}
+  if (members) {
+    for (const m of members) {
+      // Use current user's data directly if available
+      if (m.user_id === user.id) {
+        memberEmails[m.user_id] = {
+          email: user.email ?? '',
+          display_name: user.user_metadata?.display_name,
+        }
+      }
+    }
+  }
 
   const isRecovery = subscription?.tier === 'recovery' && subscription?.status === 'active'
-  const isOwnerOrAdmin = membership?.role === 'owner' || membership?.role === 'admin'
-  const orgName = (membership?.organizations as unknown as { name: string } | null)?.name ?? ''
+  const isOwner = role === 'owner'
+  const isOwnerOrAdmin = isOwner || role === 'admin'
 
   return (
     <div className="space-y-6">
@@ -62,20 +86,28 @@ export default async function SettingsPage() {
             <Bell className="h-4 w-4" />
             Notifications
           </TabsTrigger>
-          <TabsTrigger value="danger" className="gap-2 text-destructive" data-testid="tab-danger-zone">
-            <AlertTriangle className="h-4 w-4" />
-            Danger Zone
-          </TabsTrigger>
+          {isOwner && (
+            <TabsTrigger value="danger" className="gap-2 text-destructive" data-testid="tab-danger-zone">
+              <AlertTriangle className="h-4 w-4" />
+              Danger Zone
+              <span className="relative flex h-2 w-2 ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+              </span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="flex-1 min-w-0">
           <TabsContent value="profile">
-            <ProfileSection user={user!} />
+            <ProfileSection user={user} />
           </TabsContent>
           <TabsContent value="organization">
             <OrganizationSection
               orgName={orgName}
               members={members ?? []}
+              memberEmails={memberEmails}
+              currentUserId={user.id}
               isOwnerOrAdmin={isOwnerOrAdmin}
             />
           </TabsContent>
@@ -85,9 +117,11 @@ export default async function SettingsPage() {
               isRecovery={isRecovery}
             />
           </TabsContent>
-          <TabsContent value="danger">
-            <DangerZoneSection isOwner={membership?.role === 'owner'} />
-          </TabsContent>
+          {isOwner && (
+            <TabsContent value="danger">
+              <DangerZoneSection isOwner={true} />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

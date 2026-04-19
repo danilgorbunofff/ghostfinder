@@ -1,12 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ArrowRight, Building2, Copy, Download, Ghost, Lightbulb, Shield, Sparkles, TrendingDown } from 'lucide-react'
+import { ArrowRight, Building2, Copy, Ghost, Lightbulb, Shield, Sparkles, TrendingDown } from 'lucide-react'
 import { ReportSelector } from '@/components/reports/report-selector'
 import { GhostSeatCard } from '@/components/reports/ghost-seat-card'
+import { ExportButton } from '@/components/reports/export-button'
+import { ReportNotifyButton } from '@/components/reports/report-notify-button'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { normalizeDuplicateFindings, normalizeGhostSeatFindings } from '@/lib/reports/normalize-report'
+import { getServerOrgContext } from '@/lib/supabase/server-org'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -16,23 +19,37 @@ export const metadata: Metadata = {
   description: 'Ghost seat detection and duplicate subscription findings.',
 }
 
+const reportDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+const currencyFormatter = new Intl.NumberFormat('en-US')
+
 export default async function ReportsPage({
   searchParams,
 }: {
   searchParams: Promise<{ reportId?: string }>
 }) {
   const params = await searchParams
-  const supabase = await createClient()
+  const { admin, orgId } = await getServerOrgContext()
 
   // Fetch report history for selector
-  const { data: reportHistory } = await supabase
+  const { data: reportHistory, error: reportHistoryError } = await admin
     .from('waste_reports')
     .select('id, generated_at, total_monthly_waste')
+    .eq('org_id', orgId)
     .order('generated_at', { ascending: false })
     .limit(12)
 
+  if (reportHistoryError) {
+    throw new Error(`Failed to load report history: ${reportHistoryError.message}`)
+  }
+
   // Fetch selected or latest report
-  let reportQuery = supabase.from('waste_reports').select('*')
+  let reportQuery = admin.from('waste_reports').select('*').eq('org_id', orgId)
 
   if (params.reportId) {
     reportQuery = reportQuery.eq('id', params.reportId)
@@ -40,7 +57,11 @@ export default async function ReportsPage({
     reportQuery = reportQuery.order('generated_at', { ascending: false }).limit(1)
   }
 
-  const { data: report } = await reportQuery.single()
+  const { data: report, error: reportError } = await reportQuery.maybeSingle()
+
+  if (reportError) {
+    throw new Error(`Failed to load report: ${reportError.message}`)
+  }
 
   if (!report) {
     return (
@@ -85,26 +106,33 @@ export default async function ReportsPage({
     )
   }
 
-  const ghostSeats = (report.ghost_seats as Record<string, unknown>[]) ?? []
-  const duplicates = (report.duplicates as Record<string, unknown>[]) ?? []
+  const ghostSeats = normalizeGhostSeatFindings(report.ghost_seats)
+  const duplicates = normalizeDuplicateFindings(report.duplicates)
+  const ghostSeatCount = Number(
+    report.ghost_seat_count ?? ghostSeats.reduce((sum, finding) => sum + finding.ghostSeats, 0)
+  )
+  const duplicateCount = Number(report.duplicate_count ?? duplicates.length)
+  const opportunityCount = Number(report.opportunity_count ?? ghostSeats.length + duplicates.length)
 
   return (
     <div className="space-y-5">
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in-up">
         <p className="text-muted-foreground" data-testid="report-date">
-          Generated {new Date(report.generated_at).toLocaleDateString()} ·{' '}
-          {report.opportunity_count} optimization opportunities found
+          Generated {reportDateFormatter.format(new Date(report.generated_at))} ·{' '}
+          {opportunityCount} optimization opportunities found
         </p>
         <div className="flex items-center gap-3">
           <ReportSelector
             reports={reportHistory ?? []}
             currentId={report.id}
           />
-          <Button variant="outline" size="sm" disabled className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          <ExportButton
+            ghostSeats={ghostSeats}
+            duplicates={duplicates}
+            reportDate={report.generated_at}
+          />
+          <ReportNotifyButton reportId={report.id} />
         </div>
       </div>
 
@@ -116,15 +144,15 @@ export default async function ReportsPage({
               Total Monthly Waste Detected
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl md:text-5xl font-bold text-orange-500 tabular-nums tracking-tight animate-number-roll" data-testid="total-waste">
-                ${Number(report.total_monthly_waste ?? 0).toLocaleString()}
+              <span className="text-4xl md:text-5xl font-bold text-orange-500 tabular-nums tracking-tight animate-number-roll" data-testid="report-total-waste">
+                ${currencyFormatter.format(Number(report.total_monthly_waste ?? 0))}
               </span>
               <span className="text-lg font-normal text-muted-foreground">/mo</span>
             </div>
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-500/[0.06] dark:bg-red-500/[0.1] px-2.5 py-1">
               <TrendingDown className="h-3.5 w-3.5 text-destructive" />
               <span className="text-sm font-semibold text-destructive tabular-nums">
-                ${Number(report.total_annual_waste ?? 0).toLocaleString()}
+                ${currencyFormatter.format(Number(report.total_annual_waste ?? 0))}
               </span>
               <span className="text-xs text-muted-foreground">projected annual waste</span>
             </div>
@@ -133,17 +161,17 @@ export default async function ReportsPage({
           <div className="flex gap-3">
             <div className="rounded-xl border bg-card p-3 min-w-[90px] text-center animate-fade-in-up" style={{ animationDelay: '100ms' }}>
               <Ghost className="h-4 w-4 text-orange-500 mx-auto mb-1" />
-              <div className="text-xl font-bold tabular-nums">{report.ghost_seat_count}</div>
+              <div className="text-xl font-bold tabular-nums">{ghostSeatCount}</div>
               <p className="text-[10px] text-muted-foreground">Ghost Seats</p>
             </div>
             <div className="rounded-xl border bg-card p-3 min-w-[90px] text-center animate-fade-in-up" style={{ animationDelay: '150ms' }}>
               <Copy className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-              <div className="text-xl font-bold tabular-nums">{report.duplicate_count}</div>
+              <div className="text-xl font-bold tabular-nums">{duplicateCount}</div>
               <p className="text-[10px] text-muted-foreground">Duplicates</p>
             </div>
             <div className="rounded-xl border bg-card p-3 min-w-[90px] text-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <Sparkles className="h-4 w-4 text-brand mx-auto mb-1" />
-              <div className="text-xl font-bold tabular-nums text-brand">{report.opportunity_count}</div>
+              <div className="text-xl font-bold tabular-nums text-brand">{opportunityCount}</div>
               <p className="text-[10px] text-muted-foreground">Opportunities</p>
             </div>
           </div>
@@ -170,21 +198,35 @@ export default async function ReportsPage({
         </TabsList>
 
         {/* Ghost Seats Tab */}
-        <TabsContent value="ghost-seats" className="space-y-4">
-          {ghostSeats.map((finding: Record<string, unknown>, index: number) => (
-            <GhostSeatCard key={index} finding={finding} index={index} />
-          ))}
+        <TabsContent value="ghost-seats" className="space-y-4" data-testid="ghost-seats">
+          {ghostSeats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Ghost className="h-8 w-8 text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium">No ghost seats detected</p>
+              <p className="text-xs text-muted-foreground mt-1">All users are actively using their licenses.</p>
+            </div>
+          ) : (
+            ghostSeats.map((finding, index) => (
+              <GhostSeatCard key={index} finding={finding} index={index} />
+            ))
+          )}
         </TabsContent>
 
         {/* Duplicates Tab */}
-        <TabsContent value="duplicates" className="space-y-4">
-          {duplicates.map((finding: Record<string, unknown>, index: number) => {
-            const savings = finding.potentialSavings as number
+        <TabsContent value="duplicates" className="space-y-4" data-testid="duplicates">
+          {duplicates.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Copy className="h-8 w-8 text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium">No duplicates detected</p>
+              <p className="text-xs text-muted-foreground mt-1">No overlapping vendor categories found.</p>
+            </div>
+          ) : duplicates.map((finding, index) => {
+            const savings = finding.potentialSavings
             return (
-              <Card key={index} className="card-interactive animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }}>
+              <Card key={index} className="card-interactive animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }} data-testid="duplicate-card">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{finding.category as string}</CardTitle>
+                    <CardTitle className="text-base">{finding.category}</CardTitle>
                     <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900 gap-1.5">
                       <TrendingDown className="h-3 w-3" />
                       Save ${savings}/mo
@@ -194,8 +236,8 @@ export default async function ReportsPage({
                 <CardContent className="space-y-4">
                   {/* Side-by-side vendor comparison */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {(finding.vendors as Record<string, unknown>[])?.map(
-                      (v: Record<string, unknown>, i: number) => (
+                    {finding.vendors.map(
+                      (vendor, i) => (
                         <div
                           key={i}
                           className={`rounded-xl border p-4 text-center transition-all ${
@@ -210,11 +252,11 @@ export default async function ReportsPage({
                               ? 'from-brand to-brand-hover'
                               : 'from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700'
                           }`}>
-                            {(v.name as string).charAt(0).toUpperCase()}
+                            {vendor.name.charAt(0).toUpperCase()}
                           </div>
-                          <p className="font-semibold text-sm">{v.name as string}</p>
+                          <p className="font-semibold text-sm">{vendor.name}</p>
                           <p className="text-2xl font-bold mt-1 tabular-nums">
-                            ${v.monthlyCost as number}
+                            ${vendor.monthlyCost}
                             <span className="text-xs font-normal text-muted-foreground">/mo</span>
                           </p>
                           {i === 0 ? (
@@ -236,7 +278,7 @@ export default async function ReportsPage({
                     <div className="flex items-start gap-2">
                       <Lightbulb className="h-4 w-4 text-brand mt-0.5 shrink-0" />
                       <p className="text-sm text-muted-foreground">
-                        {finding.recommendation as string}
+                        {finding.recommendation}
                       </p>
                     </div>
                   </div>

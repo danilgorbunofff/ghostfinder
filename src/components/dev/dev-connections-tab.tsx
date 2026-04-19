@@ -45,7 +45,7 @@ export function DevConnectionsTab() {
               disabled={loading === 'simulate-plaid'}
               onClick={async () => {
                 const r = await run({ action: 'simulate-plaid', institutionName: plaidName, status: plaidStatus })
-                if (r) toast.success(r.message)
+                if (r) toast.success(r.message ?? `Simulated ${plaidName}`)
               }}
             >
               {loading === 'simulate-plaid' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plug className="h-3 w-3" />}
@@ -75,7 +75,7 @@ export function DevConnectionsTab() {
           disabled={loading === 'simulate-google'}
           onClick={async () => {
             const r = await run({ action: 'simulate-google', totalUsers: googleUsers, inactiveRatio: googleInactive })
-            if (r) toast.success(r.message)
+            if (r) toast.success(r.message ?? 'Simulated Google Workspace')
           }}
         >
           {loading === 'simulate-google' ? <Loader2 className="h-3 w-3 animate-spin" /> : <ToggleLeft className="h-3 w-3" />}
@@ -103,7 +103,7 @@ export function DevConnectionsTab() {
           disabled={loading === 'simulate-okta'}
           onClick={async () => {
             const r = await run({ action: 'simulate-okta', totalUsers: oktaUsers, inactiveRatio: oktaInactive })
-            if (r) toast.success(r.message)
+            if (r) toast.success(r.message ?? 'Simulated Okta')
           }}
         >
           {loading === 'simulate-okta' ? <Loader2 className="h-3 w-3 animate-spin" /> : <ToggleLeft className="h-3 w-3" />}

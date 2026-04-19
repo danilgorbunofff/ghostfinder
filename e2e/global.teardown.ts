@@ -31,6 +31,7 @@ setup('cleanup test user data', async () => {
       'transactions',
       'saas_vendors',
       'integration_connections',
+      'gocardless_connections',
       'plaid_connections',
       'subscriptions',
     ]

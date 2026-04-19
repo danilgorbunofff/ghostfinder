@@ -30,22 +30,30 @@ export async function GET(request: Request) {
       .select('org_id')
       .eq('status', 'active')
 
+    const { data: orgsWithGoCardless } = await admin
+      .from('gocardless_connections')
+      .select('org_id')
+      .eq('status', 'active')
+
     const { data: orgsWithIntegrations } = await admin
       .from('integration_connections')
       .select('org_id')
       .eq('is_active', true)
 
-    if (!orgsWithPlaid || !orgsWithIntegrations) {
+    if ((!orgsWithPlaid && !orgsWithGoCardless) || !orgsWithIntegrations) {
       return NextResponse.json({
         message: 'No qualifying organizations found',
         results: [],
       })
     }
 
-    // Orgs need BOTH Plaid AND at least one identity provider
-    const plaidOrgIds = new Set(orgsWithPlaid.map((c) => c.org_id))
+    // Orgs need BOTH a bank connection (Plaid OR GoCardless) AND at least one identity provider
+    const bankOrgIds = new Set([
+      ...(orgsWithPlaid ?? []).map((c) => c.org_id),
+      ...(orgsWithGoCardless ?? []).map((c) => c.org_id),
+    ])
     const integrationOrgIds = new Set(orgsWithIntegrations.map((c) => c.org_id))
-    const qualifiedOrgIds = [...plaidOrgIds].filter((id) => integrationOrgIds.has(id))
+    const qualifiedOrgIds = [...bankOrgIds].filter((id) => integrationOrgIds.has(id))
 
     if (qualifiedOrgIds.length === 0) {
       return NextResponse.json({

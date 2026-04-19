@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { getOrCreateStripeCustomer, createCheckoutSession } from '@/lib/services/stripe.service'
 import { NextResponse } from 'next/server'
 
@@ -16,8 +17,10 @@ export async function POST(request: Request) {
   // Validate price ID against allowed values
   const allowedPrices = [
     process.env.NEXT_PUBLIC_STRIPE_MONITOR_PRICE_ID,
+    process.env.NEXT_PUBLIC_STRIPE_MONITOR_ANNUAL_PRICE_ID,
     process.env.NEXT_PUBLIC_STRIPE_RECOVERY_PRICE_ID,
-  ]
+    process.env.NEXT_PUBLIC_STRIPE_RECOVERY_ANNUAL_PRICE_ID,
+  ].filter(Boolean)
   if (!allowedPrices.includes(priceId)) {
     return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
   }
@@ -27,22 +30,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: `${origin}/billing?mock_checkout=true` })
   }
 
-  // Get user's org
   const admin = createAdminClient()
-  const { data: membership } = await admin
-    .from('org_members')
-    .select('org_id, organizations(name)')
-    .eq('user_id', user.id)
-    .single()
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+  // Only owner/admin can upgrade
+  if (membership.role !== 'owner' && membership.role !== 'admin') {
+    return NextResponse.json({ error: 'Only owners and admins can manage billing' }, { status: 403 })
+  }
+
+  const { data: organization, error: organizationError } = await admin
+    .from('organizations')
+    .select('name')
+    .eq('id', membership.orgId)
+    .maybeSingle()
+
+  if (organizationError) {
+    return NextResponse.json({ error: 'Failed to load organization' }, { status: 500 })
   }
 
   // Get or create Stripe customer
   const customerId = await getOrCreateStripeCustomer(
-    membership.org_id,
-    (membership.organizations as unknown as { name: string }).name,
+    membership.orgId,
+    organization?.name ?? 'My Org',
     user.email!
   )
 
@@ -50,7 +63,7 @@ export async function POST(request: Request) {
   await admin
     .from('subscriptions')
     .upsert({
-      org_id: membership.org_id,
+      org_id: membership.orgId,
       stripe_customer_id: customerId,
       tier: 'free',
     }, {
@@ -63,7 +76,7 @@ export async function POST(request: Request) {
   const session = await createCheckoutSession(
     customerId,
     priceId,
-    membership.org_id,
+    membership.orgId,
     `${origin}/billing?success=true`,
     `${origin}/billing?canceled=true`
   )

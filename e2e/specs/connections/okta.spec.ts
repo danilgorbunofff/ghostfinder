@@ -30,7 +30,7 @@ test.describe('Okta connections', () => {
     await page.getByTestId(S.connections.oktaSubmit).click()
 
     // Should show error for invalid URL
-    const error = page.locator('[data-sonner-toast]').or(page.getByTestId(S.auth.errorMessage))
+    const error = page.locator('[data-sonner-toast]')
     await expect(error).toBeVisible({ timeout: 5_000 })
   })
 

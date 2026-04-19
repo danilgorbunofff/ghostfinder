@@ -45,7 +45,7 @@ export function NotificationSettingsForm({
         .filter(Boolean)
 
       const res = await fetch('/api/notifications/settings', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slack_webhook_url: slackWebhookUrl || null,
@@ -113,6 +113,7 @@ export function NotificationSettingsForm({
             value={slackWebhookUrl}
             onChange={(e) => setSlackWebhookUrl(e.target.value)}
             disabled={!slackEnabled}
+            data-testid="slack-webhook"
           />
           <p className="text-xs text-muted-foreground">
             Create an Incoming Webhook in your Slack workspace settings.
@@ -149,6 +150,7 @@ export function NotificationSettingsForm({
             value={emailRecipients}
             onChange={(e) => setEmailRecipients(e.target.value)}
             disabled={!emailEnabled}
+            data-testid="email-recipients"
           />
           <p className="text-xs text-muted-foreground">
             Comma-separated list of email addresses.

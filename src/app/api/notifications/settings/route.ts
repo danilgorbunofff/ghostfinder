@@ -1,28 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { getOrgTier, hasAccess } from '@/lib/billing/gate'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
-
-  // Get org membership
-  const { data: membership } = await admin
-    .from('org_members')
-    .select('org_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
-  }
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
   // Feature gate check
-  const tier = await getOrgTier(admin, membership.org_id)
+  const tier = await getOrgTier(admin, membership.orgId)
   if (!hasAccess(tier, 'notifications.slack') && !hasAccess(tier, 'notifications.email')) {
     return NextResponse.json(
       { error: 'Upgrade to Recovery plan to configure notifications' },
@@ -63,7 +58,7 @@ export async function POST(request: Request) {
   const { error } = await admin
     .from('notification_settings')
     .upsert({
-      org_id: membership.org_id,
+      org_id: membership.orgId,
       slack_webhook_url,
       slack_enabled: !!slack_enabled,
       email_enabled: !!email_enabled,

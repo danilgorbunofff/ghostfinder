@@ -10,6 +10,15 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from 'lucide-react'
 
+const reportDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+const reportWasteFormatter = new Intl.NumberFormat('en-US')
+
 interface ReportSelectorProps {
   reports: { id: string; generated_at: string; total_monthly_waste: number }[]
   currentId: string
@@ -36,17 +45,13 @@ export function ReportSelector({ reports, currentId }: ReportSelectorProps) {
           return (
             <SelectItem key={r.id} value={r.id} className={isActive ? 'font-medium' : ''}>
               <span>
-                {new Date(r.generated_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {reportDateFormatter.format(new Date(r.generated_at))}
                 {i === 0 && (
                   <span className="ml-1.5 text-[10px] text-brand font-medium">(Latest)</span>
                 )}
               </span>
               <span className={`ml-2 tabular-nums ${waste > 500 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                · ${waste.toLocaleString()}
+                · ${reportWasteFormatter.format(waste)}
               </span>
             </SelectItem>
           )

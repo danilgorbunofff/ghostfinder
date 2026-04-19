@@ -61,4 +61,39 @@ test.describe('Billing tiers', () => {
 
     await expect(page.getByTestId(S.billing.manageButton)).toBeVisible()
   })
+
+  test('manage subscription button hidden on free tier', async ({ page }) => {
+    await expect(page.getByTestId(S.billing.manageButton)).not.toBeVisible()
+  })
+
+  test('past-due banner shows for past_due status', async ({ devApi, page }) => {
+    await devApi.switchTier('monitor')
+    await devApi.setSubscriptionStatus('past_due')
+    await page.reload()
+
+    await expect(page.getByTestId(S.billing.pastDueBanner)).toBeVisible()
+  })
+
+  test('past-due banner hidden when active', async ({ devApi, page }) => {
+    await devApi.switchTier('monitor')
+    await page.reload()
+
+    await expect(page.getByTestId(S.billing.pastDueBanner)).not.toBeVisible()
+  })
+
+  test('FAQ accordion renders 4 questions', async ({ page }) => {
+    const questions = page.locator('[data-slot="accordion-trigger"]')
+    await expect(questions).toHaveCount(4)
+  })
+
+  test('FAQ accordion expands and collapses', async ({ page }) => {
+    const firstTrigger = page.locator('[data-slot="accordion-trigger"]').first()
+    await firstTrigger.click()
+    const firstPanel = page.locator('[data-slot="accordion-content"]').first()
+    await expect(firstPanel).toBeVisible()
+
+    // Click again to collapse
+    await firstTrigger.click()
+    await expect(firstPanel).not.toBeVisible()
+  })
 })

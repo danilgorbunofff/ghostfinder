@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { GettingStarted } from '@/components/dashboard/getting-started'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { SpendChart } from '@/components/dashboard/spend-chart'
 import { VendorBreakdown } from '@/components/dashboard/vendor-breakdown'
+import { getServerOrgContext, isMissingTableError } from '@/lib/supabase/server-org'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -14,35 +14,57 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  const { admin, orgId } = await getServerOrgContext()
 
-  const { data: spendData } = await supabase
+  const { data: spendData, error: spendError } = await admin
     .from('saas_vendors')
     .select('name, monthly_cost')
+    .eq('org_id', orgId)
     .eq('is_active', true)
 
-  const totalSpend = spendData?.reduce(
-    (sum, v) => sum + Number(v.monthly_cost || 0), 0
-  ) ?? 0
+  if (spendError) {
+    throw new Error(`Failed to load vendor spend: ${spendError.message}`)
+  }
+
+  const vendors = spendData ?? []
+
+  const totalSpend = vendors.reduce(
+    (sum, v) => sum + Number(v.monthly_cost || 0),
+    0
+  )
 
   // Fetch user activity summary from connected identity providers
-  const { data: integrations } = await supabase
+  const { data: integrations, error: integrationsError } = await admin
     .from('integration_connections')
     .select('total_users, active_users, inactive_users')
+    .eq('org_id', orgId)
     .eq('is_active', true)
 
-  const totalUsers = integrations?.reduce((s, i) => s + (i.total_users || 0), 0) ?? 0
-  const inactiveUsers = integrations?.reduce((s, i) => s + (i.inactive_users || 0), 0) ?? 0
+  if (integrationsError) {
+    throw new Error(`Failed to load integrations: ${integrationsError.message}`)
+  }
+
+  const activeIntegrations = integrations ?? []
+
+  const totalUsers = activeIntegrations.reduce((s, i) => s + (i.total_users || 0), 0)
+  const inactiveUsers = activeIntegrations.reduce((s, i) => s + (i.inactive_users || 0), 0)
 
   // Fetch last 2 reports for trend calculation
-  const { data: recentReports } = await supabase
+  const { data: recentReports, error: reportsError } = await admin
     .from('waste_reports')
     .select('total_monthly_waste, opportunity_count, generated_at')
+    .eq('org_id', orgId)
     .order('generated_at', { ascending: false })
     .limit(2)
 
-  const current = recentReports?.[0]
-  const previous = recentReports?.[1]
+  if (reportsError) {
+    throw new Error(`Failed to load reports: ${reportsError.message}`)
+  }
+
+  const reports = recentReports ?? []
+
+  const current = reports[0]
+  const previous = reports[1]
 
   const estimatedWaste = Number(current?.total_monthly_waste ?? 0)
   const opportunities = current?.opportunity_count ?? 0
@@ -58,21 +80,43 @@ export default async function DashboardPage() {
   }
 
   // Check connection states for Getting Started
-  const { count: bankCount } = await supabase
+  const { count: plaidCount, error: plaidCountError } = await admin
     .from('plaid_connections')
     .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
 
-  const { count: idpCount } = await supabase
+  if (plaidCountError) {
+    throw new Error(`Failed to load Plaid connection count: ${plaidCountError.message}`)
+  }
+
+  const { count: gcCountResult, error: gcCountError } = await admin
+    .from('gocardless_connections')
+    .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+    .in('status', ['active', 'syncing'])
+
+  if (gcCountError && !isMissingTableError(gcCountError, 'gocardless_connections')) {
+    throw new Error(`Failed to load GoCardless connection count: ${gcCountError.message}`)
+  }
+
+  const gcCount = gcCountError ? 0 : (gcCountResult ?? 0)
+
+  const { count: idpCount, error: idpCountError } = await admin
     .from('integration_connections')
     .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
     .eq('is_active', true)
 
-  const hasBankConnection = (bankCount ?? 0) > 0
+  if (idpCountError) {
+    throw new Error(`Failed to load identity provider count: ${idpCountError.message}`)
+  }
+
+  const hasBankConnection = (plaidCount ?? 0) > 0 || (gcCount ?? 0) > 0
   const hasIdentityProvider = (idpCount ?? 0) > 0
   const hasReport = !!current
 
   // Vendor breakdown for donut chart
-  const vendorList = (spendData ?? [])
+  const vendorList = vendors
     .filter(v => Number(v.monthly_cost || 0) > 0)
     .map(v => ({ name: v.name ?? 'Unknown', cost: Number(v.monthly_cost) }))
 
@@ -121,7 +165,7 @@ export default async function DashboardPage() {
       {/* Quick actions */}
       <QuickActions
         hasReport={hasReport}
-        hasConnections={hasBankConnection || hasIdentityProvider}
+        allConnected={hasBankConnection && hasIdentityProvider}
       />
 
       {/* Charts row */}

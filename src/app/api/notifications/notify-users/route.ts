@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { getOrgTier, hasAccess } from '@/lib/billing/gate'
 import { sendSlackNotification } from '@/lib/notifications/slack'
+import { sendReportNotifications } from '@/lib/notifications/send'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -10,20 +12,14 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
-
-  // Get org membership
-  const { data: membership } = await admin
-    .from('org_members')
-    .select('org_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
-  }
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
   // Feature gate check
-  const tier = await getOrgTier(admin, membership.org_id)
+  const tier = await getOrgTier(admin, membership.orgId)
   if (!hasAccess(tier, 'notifications.send')) {
     return NextResponse.json(
       { error: 'Upgrade to Recovery plan to send notifications' },
@@ -31,13 +27,27 @@ export async function POST(request: Request) {
     )
   }
 
-  const { vendor, ghostSeats, monthlyWaste } = await request.json()
+  const body = await request.json()
+
+  // Report-level notification (sends full report via all configured channels)
+  if (body.reportId) {
+    try {
+      await sendReportNotifications(admin, membership.orgId, body.reportId)
+      return NextResponse.json({ success: true })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
+  // Per-vendor notification (legacy: sends single vendor alert via Slack)
+  const { vendor, ghostSeats, monthlyWaste } = body
 
   // Get Slack webhook
   const { data: settings } = await admin
     .from('notification_settings')
     .select('slack_webhook_url, slack_enabled')
-    .eq('org_id', membership.org_id)
+    .eq('org_id', membership.orgId)
     .single()
 
   if (!settings?.slack_enabled || !settings?.slack_webhook_url) {

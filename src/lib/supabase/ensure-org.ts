@@ -1,3 +1,4 @@
+import type { MemberRole } from '@/lib/types'
 import { createAdminClient } from './admin'
 
 /**
@@ -9,17 +10,24 @@ export async function ensureOrganization(
   userId: string,
   email?: string,
   fullName?: string
-): Promise<{ orgId: string; role: string }> {
+): Promise<{ orgId: string; role: MemberRole }> {
   const admin = createAdminClient()
 
-  const { data: membership } = await admin
+  const { data: memberships, error: membershipError } = await admin
     .from('org_members')
     .select('org_id, role')
     .eq('user_id', userId)
-    .maybeSingle()
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (membershipError) {
+    throw new Error(`Failed to load membership: ${membershipError.message}`)
+  }
+
+  const membership = memberships?.[0]
 
   if (membership) {
-    return { orgId: membership.org_id, role: membership.role }
+    return { orgId: membership.org_id, role: membership.role as MemberRole }
   }
 
   // No membership — create org + membership (mirrors handle_new_user trigger)

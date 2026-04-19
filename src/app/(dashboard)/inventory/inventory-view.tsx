@@ -73,7 +73,7 @@ export function InventoryView({
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'vendors.csv'
+    a.download = `inventory-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }, [filtered])
@@ -99,7 +99,7 @@ export function InventoryView({
 
       {/* Zero-results state */}
       {filtered.length === 0 && vendors.length > 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
+        <div data-testid="inventory-empty" className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
           <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
             <span className="text-2xl">🔍</span>
           </div>

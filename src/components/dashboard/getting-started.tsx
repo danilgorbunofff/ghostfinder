@@ -17,9 +17,20 @@ export function GettingStarted({
   hasIdentityProvider,
   hasWasteReport,
 }: GettingStartedProps) {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return localStorage.getItem('gf-checklist-collapsed') !== 'true'
+  })
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number | undefined>(undefined)
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev
+      localStorage.setItem('gf-checklist-collapsed', next ? 'false' : 'true')
+      return next
+    })
+  }
 
   const steps = [
     {
@@ -69,7 +80,7 @@ export function GettingStarted({
 
       {/* Header — always visible, clickable to toggle */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="relative w-full flex items-center justify-between px-6 py-5 text-left cursor-pointer group/header"
       >
         <div>

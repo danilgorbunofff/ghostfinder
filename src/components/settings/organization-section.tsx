@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,9 +21,9 @@ interface Member {
 }
 
 const roleBadgeColors: Record<string, string> = {
-  owner: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  owner: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400',
   admin: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
-  member: 'bg-muted text-muted-foreground',
+  member: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
   viewer: 'bg-muted text-muted-foreground',
 }
 
@@ -36,12 +37,16 @@ const roleIcons: Record<string, typeof Crown> = {
 interface OrganizationSectionProps {
   orgName: string
   members: Member[]
+  memberEmails: Record<string, { email: string; display_name?: string }>
+  currentUserId: string
   isOwnerOrAdmin: boolean
 }
 
 export function OrganizationSection({
   orgName,
   members,
+  memberEmails,
+  currentUserId,
   isOwnerOrAdmin,
 }: OrganizationSectionProps) {
   const [name, setName] = useState(orgName)
@@ -51,7 +56,7 @@ export function OrganizationSection({
     setSaving(true)
     try {
       const res = await fetch('/api/settings/organization', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       })
@@ -112,7 +117,7 @@ export function OrganizationSection({
             </div>
           </div>
           {isOwnerOrAdmin && (
-            <Button variant="outline" size="sm" disabled className="shrink-0">
+            <Button variant="outline" size="sm" disabled className="shrink-0" title="Coming Soon">
               <UserPlus className="mr-2 h-4 w-4" />
               Invite
             </Button>
@@ -122,7 +127,7 @@ export function OrganizationSection({
           <Table data-testid="members-list">
             <TableHeader>
               <TableRow>
-                <TableHead>User ID</TableHead>
+                <TableHead>Member</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Joined</TableHead>
               </TableRow>
@@ -130,10 +135,28 @@ export function OrganizationSection({
             <TableBody>
               {members.map((m) => {
                 const RoleIcon = roleIcons[m.role] ?? User
+                const info = memberEmails[m.user_id]
+                const email = info?.email ?? m.user_id.slice(0, 8) + '...'
+                const displayName = info?.display_name
+                const initials = (displayName ?? email).slice(0, 2).toUpperCase()
+                const isCurrentUser = m.user_id === currentUserId
                 return (
                   <TableRow key={m.user_id} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-xs">
-                      {m.user_id.slice(0, 8)}...
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs bg-brand/10 text-brand">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {displayName ?? email.split('@')[0]}
+                            {isCurrentUser && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{email}</p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`gap-1 ${roleBadgeColors[m.role] ?? ''}`}>

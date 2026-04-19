@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
@@ -10,15 +11,11 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id, role')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
-  }
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
   if (membership.role === 'owner') {
     return NextResponse.json(
@@ -32,7 +29,7 @@ export async function POST() {
     .from('org_members')
     .delete()
     .eq('user_id', user.id)
-    .eq('org_id', membership.org_id)
+    .eq('org_id', membership.orgId)
 
   if (error) {
     console.error('Failed to leave organization:', error)

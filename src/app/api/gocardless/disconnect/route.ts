@@ -84,6 +84,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to disconnect' }, { status: 500 })
   }
 
+  // Clean up derived data that was built from this connection's transactions
+  const [{ error: vendorsError }, { error: reportsError }] = await Promise.all([
+    admin.from('saas_vendors').delete().eq('org_id', membership.orgId),
+    admin.from('waste_reports').delete().eq('org_id', membership.orgId),
+  ])
+  if (vendorsError) console.error('[gocardless disconnect] saas_vendors cleanup failed:', vendorsError)
+  if (reportsError) console.error('[gocardless disconnect] waste_reports cleanup failed:', reportsError)
+
   revalidatePath('/', 'layout')
   return NextResponse.json({ success: true })
 }

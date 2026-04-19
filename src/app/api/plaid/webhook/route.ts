@@ -1,8 +1,25 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyWebhook } from '@/lib/services/plaid.service'
 import { NextResponse } from 'next/server'
+
+export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
   const body = await request.text()
+
+  // Verify Plaid webhook signature (skip in mock mode)
+  if (process.env.MOCK_SERVICES !== 'true') {
+    const headers: Record<string, string> = {}
+    request.headers.forEach((value, key) => {
+      headers[key] = value
+    })
+
+    const isValid = await verifyWebhook(body, headers)
+    if (!isValid) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    }
+  }
+
   let payload: Record<string, unknown>
 
   try {

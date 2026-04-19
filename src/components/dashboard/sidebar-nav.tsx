@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MemberRole } from '@/lib/types'
 
 interface SidebarNavProps {
@@ -26,17 +26,51 @@ interface SidebarNavProps {
 }
 
 const navItems = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard, iconColor: 'text-brand', bgColor: 'bg-brand-muted' },
-  { label: 'Inventory', href: '/inventory', icon: Package, iconColor: 'text-violet-500', bgColor: 'bg-violet-500/10' },
-  { label: 'Connections', href: '/connections', icon: Plug, iconColor: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-  { label: 'Reports', href: '/reports', icon: FileBarChart, iconColor: 'text-orange-500', bgColor: 'bg-orange-500/10' },
-  { label: 'Billing', href: '/billing', icon: CreditCard, iconColor: 'text-green-500', bgColor: 'bg-green-500/10' },
-  { label: 'Settings', href: '/settings', icon: Settings, iconColor: 'text-muted-foreground', bgColor: 'bg-muted' },
+  {
+    label: 'Dashboard', href: '/', icon: LayoutDashboard,
+    iconColor: 'text-brand', bgColor: 'bg-brand-muted',
+    hoverIconColor: 'group-hover/nav:text-brand', hoverBgColor: 'group-hover/nav:bg-brand-muted',
+  },
+  {
+    label: 'Inventory', href: '/inventory', icon: Package,
+    iconColor: 'text-violet-500', bgColor: 'bg-violet-500/10',
+    hoverIconColor: 'group-hover/nav:text-violet-500', hoverBgColor: 'group-hover/nav:bg-violet-500/10',
+  },
+  {
+    label: 'Connections', href: '/connections', icon: Plug,
+    iconColor: 'text-blue-500', bgColor: 'bg-blue-500/10',
+    hoverIconColor: 'group-hover/nav:text-blue-500', hoverBgColor: 'group-hover/nav:bg-blue-500/10',
+  },
+  {
+    label: 'Reports', href: '/reports', icon: FileBarChart,
+    iconColor: 'text-orange-500', bgColor: 'bg-orange-500/10',
+    hoverIconColor: 'group-hover/nav:text-orange-500', hoverBgColor: 'group-hover/nav:bg-orange-500/10',
+  },
+  {
+    label: 'Billing', href: '/billing', icon: CreditCard,
+    iconColor: 'text-green-500', bgColor: 'bg-green-500/10',
+    hoverIconColor: 'group-hover/nav:text-green-500', hoverBgColor: 'group-hover/nav:bg-green-500/10',
+  },
+  {
+    label: 'Settings', href: '/settings', icon: Settings,
+    iconColor: 'text-muted-foreground', bgColor: 'bg-muted',
+    hoverIconColor: 'group-hover/nav:text-muted-foreground', hoverBgColor: 'group-hover/nav:bg-muted',
+  },
 ]
 
 export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -95,9 +129,9 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
                 }`}
               >
                 <div className={`flex items-center justify-center h-7 w-7 rounded-lg transition-all duration-200 ${
-                  active ? item.bgColor : 'group-hover/nav:' + item.bgColor
+                  active ? item.bgColor : item.hoverBgColor
                 }`}>
-                  <Icon className={`h-4 w-4 transition-colors duration-200 ${active ? item.iconColor : 'group-hover/nav:' + item.iconColor}`} />
+                  <Icon className={`h-4 w-4 transition-colors duration-200 ${active ? item.iconColor : item.hoverIconColor}`} />
                 </div>
                 {item.label}
               </Link>
@@ -136,7 +170,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
         variant="ghost"
         size="icon"
         data-testid="nav-mobile-toggle"
-        className="fixed top-4 left-4 z-50 md:hidden"
+        className="fixed top-4 left-4 z-[60] lg:hidden"
         onClick={() => setMobileOpen(!mobileOpen)}
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -144,7 +178,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
 
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${
           mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setMobileOpen(false)}
@@ -153,7 +187,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
       {/* Mobile sidebar */}
       <aside
         data-testid="sidebar-nav"
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-foreground/5 bg-background/80 backdrop-blur-2xl sidebar-mesh transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-foreground/5 bg-background/80 backdrop-blur-2xl sidebar-mesh transition-transform duration-300 ease-in-out lg:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -161,7 +195,7 @@ export function SidebarNav({ user, orgName, role }: SidebarNavProps) {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="relative z-10 hidden md:flex w-64 flex-col border-r border-foreground/5 bg-background/80 backdrop-blur-2xl sidebar-mesh">
+      <aside className="relative z-10 hidden lg:flex w-[264px] flex-col border-r border-foreground/5 bg-background/80 backdrop-blur-2xl sidebar-mesh">
         {sidebarContent}
       </aside>
     </>

@@ -85,7 +85,7 @@ export function DisconnectMenu({ connectionId, provider, name }: DisconnectMenuP
       </DropdownMenu>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent showCloseButton={false}>
+        <DialogContent showCloseButton={false} data-testid="disconnect-dialog">
           <DialogHeader>
             <DialogTitle>Disconnect {name}?</DialogTitle>
             <DialogDescription>

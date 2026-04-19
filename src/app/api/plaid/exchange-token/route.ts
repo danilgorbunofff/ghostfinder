@@ -97,6 +97,7 @@ export async function POST(request: Request) {
 
     await triggerScanIfReady(admin, membership.orgId)
 
+    revalidatePath('/', 'layout')
     return NextResponse.json({
       success: true,
       connectionId: itemId,

@@ -13,17 +13,28 @@ const JOBS = [
 ]
 
 export function DevCronTab() {
-  const { run, loading } = useDevAction()
+  const { run } = useDevAction()
+  const [runningJob, setRunningJob] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, { success: boolean; time: string }>>({})
 
   async function triggerJob(jobId: string) {
-    const r = await run({ action: 'run-cron', job: jobId })
-    if (r) {
-      setResults(prev => ({
-        ...prev,
-        [jobId]: { success: r.success, time: new Date().toLocaleTimeString() },
-      }))
-      toast.success(`${jobId}: ${r.success ? 'completed' : 'failed'}`)
+    setRunningJob(jobId)
+    try {
+      const r = await run({ action: 'run-cron', job: jobId })
+      if (r) {
+        const succeeded = r.success === true
+        setResults(prev => ({
+          ...prev,
+          [jobId]: { success: succeeded, time: new Date().toLocaleTimeString() },
+        }))
+        if (succeeded) {
+          toast.success(`${jobId}: completed`)
+        } else {
+          toast.error(`${jobId}: failed`)
+        }
+      }
+    } finally {
+      setRunningJob(null)
     }
   }
 
@@ -35,7 +46,7 @@ export function DevCronTab() {
       {JOBS.map(job => {
         const Icon = job.icon
         const result = results[job.id]
-        const isRunning = loading === 'run-cron'
+        const isRunning = runningJob === job.id
 
         return (
           <div key={job.id} className="rounded-lg border p-2.5 space-y-1">
@@ -48,7 +59,7 @@ export function DevCronTab() {
                 size="sm"
                 variant="outline"
                 className="h-6 text-[10px] gap-1"
-                disabled={isRunning}
+                disabled={runningJob !== null}
                 onClick={() => triggerJob(job.id)}
               >
                 {isRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}

@@ -191,7 +191,7 @@ export default function SignupPage() {
               )}
             </div>
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" data-testid="signup-error">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>

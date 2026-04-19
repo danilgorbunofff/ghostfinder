@@ -94,7 +94,7 @@ export function BillingToggle({
   return (
     <>
       {/* Monthly / Annual Toggle */}
-      <div className="flex items-center justify-center mb-8 animate-fade-in-up">
+      <div className="flex items-center justify-center mb-8 animate-fade-in-up" data-testid="billing-toggle">
         <div className="relative flex items-center rounded-full bg-muted p-1">
           <div
             className="absolute top-1 bottom-1 rounded-full bg-foreground shadow-sm transition-all duration-300 ease-out"
@@ -263,6 +263,7 @@ function PlanCardContent({
               <Badge
                 variant="outline"
                 className={`w-full justify-center h-8 gap-1.5 ${config.currentBadge}`}
+                data-testid="current-plan-badge"
               >
                 <CheckCircle className="h-3 w-3" />
                 Current Plan

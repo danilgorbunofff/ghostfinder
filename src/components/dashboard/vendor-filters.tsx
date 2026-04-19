@@ -121,7 +121,7 @@ export function VendorFilters({
           {categories.length > 0 && onCategoryChange && (
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+                <Button variant="outline" size="sm" data-testid="inventory-category-filter" className="gap-1.5 shrink-0">
                   <Tag className="h-3.5 w-3.5" />
                   Category
                   {selectedCategories.length > 0 && (
@@ -147,7 +147,7 @@ export function VendorFilters({
 
           {/* Clear */}
           {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={clearAll} className="shrink-0 gap-1 text-muted-foreground">
+            <Button variant="ghost" size="sm" onClick={clearAll} data-testid="clear-filters" className="shrink-0 gap-1 text-muted-foreground">
               <X className="h-3.5 w-3.5" />
               Clear
             </Button>
@@ -207,7 +207,7 @@ export function VendorFilters({
 
       {/* Cost range pills */}
       {onCostRangeChange && (
-        <div className="flex items-center gap-1.5">
+        <div data-testid="inventory-cost-filter" className="flex items-center gap-1.5">
           <span className="text-[11px] text-muted-foreground mr-1">Cost:</span>
           {(Object.entries(costRangeLabels) as [CostRange, string][]).map(([key, label]) => (
             <button

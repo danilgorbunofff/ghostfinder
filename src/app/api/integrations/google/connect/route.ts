@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureOrganization } from '@/lib/supabase/ensure-org'
-import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import crypto from 'crypto'
@@ -24,31 +23,7 @@ export async function POST() {
   }
 
   if (process.env.MOCK_SERVICES === 'true') {
-    const { createAdminClient } = await import('@/lib/supabase/admin')
-    const admin = createAdminClient()
-
-    // Seed a real integration_connections row so the UI shows the connection
-    const { error: icError } = await admin.from('integration_connections').upsert({
-      org_id: membership.orgId,
-      provider: 'google_workspace',
-      is_active: true,
-      total_users: 25,
-      active_users: 18,
-      inactive_users: 7,
-      last_synced_at: new Date().toISOString(),
-      metadata: { domain: 'demo.co', adminEmail: 'admin@demo.co' },
-      error_message: null,
-    }, { onConflict: 'org_id,provider' })
-    if (icError) console.error('[mock] integration_connections upsert failed:', icError.message)
-
-    // Seed user activity so reports/ghost-seat detection works
-    const { seedMockUserActivity } = await import('@/lib/utils/mock-seed')
-    console.log('[mock] Seeding Google Workspace user activity for org:', membership.orgId)
-    await seedMockUserActivity(admin, membership.orgId, 'google_workspace')
-    console.log('[mock] Google seeding complete')
-
-    revalidatePath('/', 'layout')
-    return NextResponse.json({ authorizationUrl: `${process.env.NEXT_PUBLIC_APP_URL}/connections?success=google_connected` })
+    return NextResponse.json({ authorizationUrl: `${process.env.NEXT_PUBLIC_APP_URL}/connections?mock_google=true` })
   }
 
   // Generate OAuth state parameter (CSRF protection)

@@ -1,24 +1,29 @@
-import { createClient } from '@/lib/supabase/server'
 import { PlaidLinkButton } from '@/components/connections/plaid-link-button'
 import { GoCardlessConnectButton } from '@/components/connections/gocardless-connect-button'
 import { OktaConnectButton } from '@/components/connections/okta-connect-button'
 import { GoogleConnectButton } from '@/components/connections/google-connect-button'
-import { DisconnectMenu } from '@/components/connections/disconnect-dialog'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, AlertCircle, Globe, Plus } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreHorizontal, RefreshCw, AlertCircle, Globe, Plus } from 'lucide-react'
 import { PlaidLogo, OktaLogo, GoogleLogo, GoCardlessLogo } from '@/components/connections/provider-logos'
 import { OnboardingProgress } from '@/components/connections/onboarding-progress'
 import { ConnectionStats } from '@/components/connections/connection-stats'
+import { getServerOrgContext, isMissingTableError } from '@/lib/supabase/server-org'
 import type { Metadata } from 'next'
-
-export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Connections | GhostFinder',
   description: 'Connect bank accounts and identity providers to discover SaaS usage.',
 }
+
+export const dynamic = 'force-dynamic'
 
 function formatTimeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -51,44 +56,80 @@ export default async function ConnectionsPage({
   searchParams: Promise<{ success?: string; error?: string }>
 }) {
   const { success, error: urlError } = await searchParams
-  const supabase = await createClient()
+  const { admin, orgId } = await getServerOrgContext()
 
-  await supabase.auth.getUser()
-
-  const { data: connections } = await supabase
+  const { data: plaidConnections, error: connectionsError } = await admin
     .from('plaid_connections')
     .select('id, institution_name, status, last_synced_at, error_message')
+    .eq('org_id', orgId)
 
-  const { data: gcConnections } = await supabase
+  if (connectionsError) {
+    throw new Error(`Failed to load Plaid connections: ${connectionsError.message}`)
+  }
+
+  const connections = plaidConnections ?? []
+
+  type GoCardlessConnection = {
+    country: string
+    error_message: string | null
+    expires_at: string | null
+    id: string
+    institution_name: string
+    last_synced_at: string | null
+    status: string
+  }
+
+  let gcConnections: GoCardlessConnection[] = []
+
+  const { data: rawGcConnections, error: gcConnectionsError } = await admin
     .from('gocardless_connections')
     .select('id, institution_name, country, status, last_synced_at, expires_at, error_message')
+    .eq('org_id', orgId)
 
-  const { data: integrations } = await supabase
+  if (gcConnectionsError && !isMissingTableError(gcConnectionsError, 'gocardless_connections')) {
+    throw new Error(`Failed to load GoCardless connections: ${gcConnectionsError.message}`)
+  }
+
+  gcConnections = rawGcConnections ?? []
+
+  const { data: rawIntegrations, error: integrationsError } = await admin
     .from('integration_connections')
     .select('id, provider, is_active, total_users, active_users, inactive_users, last_synced_at, error_message, metadata')
+    .eq('org_id', orgId)
 
-  const { count: wasteReportCount } = await supabase
+  if (integrationsError) {
+    throw new Error(`Failed to load integrations: ${integrationsError.message}`)
+  }
+
+  const integrations = rawIntegrations ?? []
+
+  const { count: wasteReportCount, error: wasteReportCountError } = await admin
     .from('waste_reports')
     .select('id', { count: 'exact', head: true })
+    .eq('org_id', orgId)
 
-  const hasBankConnection = (connections?.length ?? 0) > 0 || (gcConnections?.length ?? 0) > 0
-  const hasIdentityProvider = (integrations?.length ?? 0) > 0
+  if (wasteReportCountError) {
+    throw new Error(`Failed to load report count: ${wasteReportCountError.message}`)
+  }
+
+  const hasBankConnection = connections.length > 0 || gcConnections.length > 0
+  const hasIdentityProvider = integrations.length > 0
   const hasWasteReport = (wasteReportCount ?? 0) > 0
 
   // Stats
-  const totalConnections = (connections?.length ?? 0) + (gcConnections?.length ?? 0) + (integrations?.length ?? 0)
-  const totalUsers = (integrations ?? []).reduce((sum, i) => sum + (i.total_users ?? 0), 0)
+  const totalConnections = connections.length + gcConnections.length + integrations.length
+  const totalUsers = integrations.reduce((sum, i) => sum + (i.total_users ?? 0), 0)
   const allSyncDates = [
-    ...(connections ?? []).map(c => c.last_synced_at).filter(Boolean),
-    ...(gcConnections ?? []).map(c => c.last_synced_at).filter(Boolean),
-    ...(integrations ?? []).map(i => i.last_synced_at).filter(Boolean),
+    ...connections.map(c => c.last_synced_at).filter(Boolean),
+    ...gcConnections.map(c => c.last_synced_at).filter(Boolean),
+    ...integrations.map(i => i.last_synced_at).filter(Boolean),
   ] as string[]
   const lastSynced = allSyncDates.length > 0
     ? formatTimeAgo(allSyncDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0])
     : null
 
   // Which identity providers are already connected
-  const connectedProviders = new Set((integrations ?? []).map(i => i.provider))
+  const connectedProviders = new Set(integrations.map(i => i.provider))
 
   return (
     <div className="space-y-5">
@@ -195,11 +236,18 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DisconnectMenu
-                        connectionId={conn.id}
-                        provider="plaid"
-                        name={conn.institution_name}
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )
@@ -262,11 +310,18 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DisconnectMenu
-                        connectionId={gc.id}
-                        provider="gocardless"
-                        name={gc.institution_name}
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )
@@ -329,11 +384,18 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DisconnectMenu
-                        connectionId={gc.id}
-                        provider="gocardless"
-                        name={gc.institution_name}
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )
@@ -466,11 +528,18 @@ export default async function ConnectionsPage({
                         )}
                       </div>
 
-                      <DisconnectMenu
-                        connectionId={integration.id}
-                        provider={integration.provider === 'okta' ? 'okta' : 'google'}
-                        name={integration.provider === 'okta' ? 'Okta' : 'Google Workspace'}
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" disabled>
+                            Disconnect
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )

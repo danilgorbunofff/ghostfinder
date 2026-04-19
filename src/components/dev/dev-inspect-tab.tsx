@@ -2,33 +2,49 @@
 
 import { Button } from '@/components/ui/button'
 import { Loader2, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
-import { useDevAction } from './use-dev-action'
+import { type DevActionState, useDevAction } from './use-dev-action'
 import { useState, useEffect, useCallback } from 'react'
-
-interface OrgState {
-  user: { userId: string; orgId: string; role: string }
-  subscription: { tier: string; status: string }
-  counts: Record<string, number>
-  latestReport: {
-    total_monthly_waste: number
-    ghost_seat_count: number
-    duplicate_count: number
-    generated_at: string
-  } | null
-  env: Record<string, string | boolean>
-}
+import { onDevActionEvent } from './dev-tools-events'
 
 export function DevInspectTab() {
   const { run, loading } = useDevAction()
-  const [state, setState] = useState<OrgState | null>(null)
+  const [state, setState] = useState<DevActionState | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
+    setError(null)
     const r = await run({ action: 'get-state' })
-    if (r?.state) setState(r.state)
+    if (r?.state) {
+      setState(r.state)
+      return
+    }
+
+    setError('State could not be loaded. Check the latest action status above, then retry.')
   }, [run])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on mount
   useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => onDevActionEvent((detail) => {
+    if (detail.phase === 'succeeded' && detail.action !== 'get-state') {
+      void refresh()
+    }
+  }), [refresh])
+
+  if (error && !state) {
+    return (
+      <div className="space-y-3 py-4">
+        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-300">State unavailable</p>
+          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{error}</p>
+        </div>
+        <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={refresh} disabled={loading === 'get-state'}>
+          {loading === 'get-state' ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+          Retry state check
+        </Button>
+      </div>
+    )
+  }
 
   if (!state) {
     return (
@@ -97,6 +113,12 @@ export function DevInspectTab() {
           <EnvFlag key={key} label={key} value={val} />
         ))}
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2">
+          <p className="text-[10px] text-amber-700 dark:text-amber-300">{error}</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,39 +1,26 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { SidebarNav } from '@/components/dashboard/sidebar-nav'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { PageWrapper } from '@/components/ui/page-wrapper'
 import { DevToolsLoader } from '@/components/dev/dev-tools-loader'
-import { ensureOrganization } from '@/lib/supabase/ensure-org'
+import { getServerOrgContext } from '@/lib/supabase/server-org'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, orgName, role, admin, orgId } = await getServerOrgContext()
 
-  if (!user) {
-    redirect('/login')
-  }
+  const { data: subscription } = await admin
+    .from('subscriptions')
+    .select('tier, status')
+    .eq('org_id', orgId)
+    .maybeSingle()
 
-  // Ensure org exists (safety net for users missing handle_new_user trigger)
-  await ensureOrganization(
-    user.id,
-    user.email ?? undefined,
-    user.user_metadata?.full_name ?? undefined
-  )
-
-  // Fetch user's org membership
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id, role, organizations(id, name)')
-    .eq('user_id', user.id)
-    .single()
-
-  const orgName = (membership?.organizations as unknown as { id: string; name: string } | null)?.name ?? 'My Org'
-  const role = membership?.role ?? 'member'
+  const displayName: string | undefined =
+    user.user_metadata?.full_name ??
+    user.user_metadata?.display_name ??
+    undefined
 
   return (
     <div className="relative flex h-screen overflow-hidden">
@@ -50,7 +37,11 @@ export default async function DashboardLayout({
       <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
         <PageHeader
           userEmail={user.email ?? ''}
+          displayName={displayName}
           orgName={orgName}
+          role={role}
+          subscriptionTier={subscription?.tier ?? null}
+          subscriptionStatus={subscription?.status ?? null}
         />
         <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8">
           <PageWrapper>

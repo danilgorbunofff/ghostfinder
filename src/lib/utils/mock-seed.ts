@@ -1,4 +1,5 @@
 import { type SupabaseClient } from '@supabase/supabase-js'
+import { generateWasteReport } from '@/lib/reconciliation/engine'
 
 // Shared mock data for connection mock-mode flows.
 // Extracted from dev/route.ts to avoid duplication.
@@ -92,79 +93,10 @@ export async function seedMockUserActivity(admin: AdminClient, orgId: string, pr
 }
 
 export async function seedMockWasteReport(admin: AdminClient, orgId: string) {
-  const ghostSeats = [
-    {
-      vendor: 'Slack',
-      monthlyWaste: 125,
-      activeSeats: 25,
-      totalSeats: 35,
-      ghostSeats: 10,
-      inactiveUsers: [
-        { email: 'carol@demo.co', daysSinceLogin: 45, source: 'okta' },
-        { email: 'dave@demo.co', daysSinceLogin: 60, source: 'okta' },
-        { email: 'frank@demo.co', daysSinceLogin: 90, source: 'google_workspace' },
-        { email: 'henry@demo.co', daysSinceLogin: 55, source: 'okta' },
-        { email: 'jake@demo.co', daysSinceLogin: 75, source: 'google_workspace' },
-      ],
-    },
-    {
-      vendor: 'Figma',
-      monthlyWaste: 90,
-      activeSeats: 12,
-      totalSeats: 18,
-      ghostSeats: 6,
-      inactiveUsers: [
-        { email: 'liam@demo.co', daysSinceLogin: 40, source: 'okta' },
-        { email: 'noah@demo.co', daysSinceLogin: 85, source: 'google_workspace' },
-      ],
-    },
-    {
-      vendor: 'Zoom',
-      monthlyWaste: 60,
-      activeSeats: 39,
-      totalSeats: 45,
-      ghostSeats: 6,
-      inactiveUsers: [
-        { email: 'dave@demo.co', daysSinceLogin: 60, source: 'okta' },
-        { email: 'frank@demo.co', daysSinceLogin: 90, source: 'google_workspace' },
-      ],
-    },
-  ]
+  const { error } = await admin.from('waste_reports').delete().eq('org_id', orgId)
+  if (error) {
+    throw new Error(`[mock-seed] waste_reports cleanup failed: ${error.message}`)
+  }
 
-  const duplicates = [
-    {
-      category: 'Project Management',
-      potentialSavings: 290,
-      vendors: [
-        { name: 'Jira', monthlyCost: 380 },
-        { name: 'Asana', monthlyCost: 290 },
-      ],
-    },
-    {
-      category: 'CRM',
-      potentialSavings: 890,
-      vendors: [
-        { name: 'Salesforce', monthlyCost: 2400 },
-        { name: 'HubSpot', monthlyCost: 890 },
-      ],
-    },
-  ]
-
-  const totalMonthlyWaste = ghostSeats.reduce((s, g) => s + g.monthlyWaste, 0) +
-    duplicates.reduce((s, d) => s + d.potentialSavings, 0)
-
-  // Delete existing mock reports for this org before inserting a fresh one
-  await admin.from('waste_reports').delete().eq('org_id', orgId)
-
-  const { error } = await admin.from('waste_reports').insert({
-    org_id: orgId,
-    total_monthly_waste: totalMonthlyWaste,
-    total_annual_waste: totalMonthlyWaste * 12,
-    ghost_seat_count: ghostSeats.reduce((s, g) => s + g.ghostSeats, 0),
-    duplicate_count: duplicates.length,
-    opportunity_count: ghostSeats.length + duplicates.length,
-    ghost_seats: ghostSeats,
-    duplicates: duplicates,
-  })
-  if (error) console.error('[mock-seed] waste_reports failed:', error.message)
+  await generateWasteReport(admin, orgId)
 }

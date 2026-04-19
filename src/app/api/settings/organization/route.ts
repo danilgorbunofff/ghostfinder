@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureOrganization } from '@/lib/supabase/ensure-org'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -16,15 +17,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid organization name' }, { status: 400 })
   }
 
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id, role')
-    .eq('user_id', user.id)
-    .single()
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No organization found' }, { status: 404 })
-  }
+  const membership = await ensureOrganization(
+    user.id,
+    user.email ?? undefined,
+    user.user_metadata?.full_name ?? undefined
+  )
 
   if (membership.role !== 'owner' && membership.role !== 'admin') {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -34,7 +31,7 @@ export async function POST(request: Request) {
   const { error } = await admin
     .from('organizations')
     .update({ name: name.trim() })
-    .eq('id', membership.org_id)
+    .eq('id', membership.orgId)
 
   if (error) {
     console.error('Failed to update organization:', error)

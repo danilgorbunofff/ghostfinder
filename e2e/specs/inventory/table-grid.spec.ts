@@ -22,13 +22,16 @@ test.describe('Inventory table and grid views', () => {
   })
 
   test('can switch to grid view', async ({ page }) => {
-    await page.getByTestId(S.inventory.viewToggle).click()
+    // Click the grid button within the view toggle
+    const toggle = page.getByTestId(S.inventory.viewToggle)
+    await toggle.locator('button').nth(1).click()
     await expect(page.getByTestId(S.inventory.vendorGrid)).toBeVisible()
   })
 
   test('view mode persists across navigation', async ({ page }) => {
     // Switch to grid
-    await page.getByTestId(S.inventory.viewToggle).click()
+    const toggle = page.getByTestId(S.inventory.viewToggle)
+    await toggle.locator('button').nth(1).click()
     await expect(page.getByTestId(S.inventory.vendorGrid)).toBeVisible()
 
     // Navigate away and back

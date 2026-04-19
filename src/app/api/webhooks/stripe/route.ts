@@ -71,6 +71,32 @@ export async function POST(request: Request) {
         break
       }
 
+      case 'customer.subscription.created': {
+        const subscription = event.data.object as Stripe.Subscription
+        const orgId = subscription.metadata?.org_id
+        if (!orgId) break
+
+        const createdItem = subscription.items.data[0]
+        const priceId = createdItem?.price?.id
+
+        await admin
+          .from('subscriptions')
+          .upsert({
+            org_id: orgId,
+            stripe_customer_id: subscription.customer as string,
+            stripe_subscription_id: subscription.id,
+            stripe_price_id: priceId,
+            tier: determineTier(priceId),
+            status: subscription.status,
+            current_period_start: createdItem ? new Date(createdItem.current_period_start * 1000).toISOString() : null,
+            current_period_end: createdItem ? new Date(createdItem.current_period_end * 1000).toISOString() : null,
+          }, {
+            onConflict: 'org_id',
+          })
+
+        break
+      }
+
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
         const orgId = subscription.metadata?.org_id
@@ -123,6 +149,19 @@ export async function POST(request: Request) {
         break
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        const subscriptionId = invoice.parent?.subscription_details?.subscription as string | undefined
+        if (!subscriptionId) break
+
+        await admin
+          .from('subscriptions')
+          .update({ status: 'active' })
+          .eq('stripe_subscription_id', subscriptionId)
+
+        break
+      }
+
       default:
         break
     }
@@ -137,7 +176,15 @@ export async function POST(request: Request) {
 }
 
 function determineTier(priceId: string | undefined): 'free' | 'monitor' | 'recovery' {
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_MONITOR_PRICE_ID) return 'monitor'
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_RECOVERY_PRICE_ID) return 'recovery'
+  const monitorPrices = [
+    process.env.NEXT_PUBLIC_STRIPE_MONITOR_PRICE_ID,
+    process.env.NEXT_PUBLIC_STRIPE_MONITOR_ANNUAL_PRICE_ID,
+  ]
+  const recoveryPrices = [
+    process.env.NEXT_PUBLIC_STRIPE_RECOVERY_PRICE_ID,
+    process.env.NEXT_PUBLIC_STRIPE_RECOVERY_ANNUAL_PRICE_ID,
+  ]
+  if (priceId && monitorPrices.includes(priceId)) return 'monitor'
+  if (priceId && recoveryPrices.includes(priceId)) return 'recovery'
   return 'free'
 }

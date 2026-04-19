@@ -72,9 +72,10 @@ export function DangerZoneSection({ isOwner }: { isOwner: boolean }) {
           <ConfirmDialog
             title="Delete account"
             description="This will permanently delete your account, remove you from all organizations, and erase your data. This action cannot be reversed."
-            confirmText="delete my account"
+            confirmText="DELETE"
             action="Delete"
             variant="destructive"
+            triggerTestId="delete-org-button"
             onConfirm={async () => {
               const res = await fetch('/api/settings/delete-account', { method: 'DELETE' })
               if (res.ok) {
@@ -97,6 +98,7 @@ function ConfirmDialog({
   confirmText,
   action,
   variant = 'outline',
+  triggerTestId,
   onConfirm,
 }: {
   title: string
@@ -104,13 +106,14 @@ function ConfirmDialog({
   confirmText: string
   action: string
   variant?: 'outline' | 'destructive'
+  triggerTestId?: string
   onConfirm: () => Promise<void>
 }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
-  const isMatch = input.toLowerCase() === confirmText.toLowerCase()
+  const isMatch = input === confirmText
 
   async function handleConfirm() {
     setLoading(true)
@@ -121,7 +124,7 @@ function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); setInput('') }}>
-      <DialogTrigger render={<Button variant={variant} size="sm" />}>
+      <DialogTrigger render={<Button variant={variant} size="sm" data-testid={triggerTestId} />}>
         {action}
       </DialogTrigger>
       <DialogContent>
@@ -143,6 +146,7 @@ function ConfirmDialog({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={confirmText}
+            data-testid="delete-confirm"
           />
         </div>
         <DialogFooter>

@@ -10,24 +10,24 @@ test.describe('Login page', () => {
   })
 
   test('renders login form', async ({ page }) => {
-    await expect(page.getByTestId(S.auth.emailInput)).toBeVisible()
-    await expect(page.getByTestId(S.auth.passwordInput)).toBeVisible()
-    await expect(page.getByTestId(S.auth.submitButton)).toBeVisible()
-    await expect(page.getByTestId(S.auth.googleButton)).toBeVisible()
+    await expect(page.getByTestId(S.auth.loginEmail)).toBeVisible()
+    await expect(page.getByTestId(S.auth.loginPassword)).toBeVisible()
+    await expect(page.getByTestId(S.auth.loginSubmit)).toBeVisible()
+    await expect(page.getByTestId(S.auth.loginGoogle)).toBeVisible()
   })
 
   test('shows error on invalid credentials', async ({ page }) => {
-    await page.getByTestId(S.auth.emailInput).fill('bad@example.com')
-    await page.getByTestId(S.auth.passwordInput).fill('wrongpassword')
-    await page.getByTestId(S.auth.submitButton).click()
+    await page.getByTestId(S.auth.loginEmail).fill('bad@example.com')
+    await page.getByTestId(S.auth.loginPassword).fill('wrongpassword')
+    await page.getByTestId(S.auth.loginSubmit).click()
 
-    await expect(page.getByTestId(S.auth.errorMessage)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByTestId(S.auth.loginError)).toBeVisible({ timeout: 5_000 })
   })
 
   test('successful login redirects to dashboard', async ({ page }) => {
-    await page.getByTestId(S.auth.emailInput).fill('e2e-owner@ghostfinder.test')
-    await page.getByTestId(S.auth.passwordInput).fill('TestPassword123!')
-    await page.getByTestId(S.auth.submitButton).click()
+    await page.getByTestId(S.auth.loginEmail).fill('e2e-owner@ghostfinder.test')
+    await page.getByTestId(S.auth.loginPassword).fill('TestPassword123!')
+    await page.getByTestId(S.auth.loginSubmit).click()
 
     await page.waitForURL('/', { timeout: 10_000 })
     await expect(page).toHaveURL('/')
@@ -36,7 +36,7 @@ test.describe('Login page', () => {
   test('Google OAuth button initiates redirect', async ({ page }) => {
     const [popup] = await Promise.all([
       page.waitForEvent('popup').catch(() => null),
-      page.getByTestId(S.auth.googleButton).click(),
+      page.getByTestId(S.auth.loginGoogle).click(),
     ])
 
     // Depending on OAuth config, either a popup opens or the page navigates

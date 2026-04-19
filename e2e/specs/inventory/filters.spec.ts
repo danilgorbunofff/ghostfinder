@@ -24,7 +24,7 @@ test.describe('Inventory filters', () => {
 
   test('status filter shows only active vendors', async ({ page }) => {
     await page.getByTestId(S.inventory.statusFilter).click()
-    await page.getByRole('option', { name: /active/i }).click()
+    await page.getByRole('menuitemcheckbox', { name: /^Active$/i }).click()
 
     const rows = page.getByTestId(S.inventory.vendorRow)
     const count = await rows.count()
@@ -32,12 +32,13 @@ test.describe('Inventory filters', () => {
   })
 
   test('cost range filter: high shows expensive vendors', async ({ page }) => {
-    await page.getByTestId(S.inventory.costFilter).click()
-    await page.getByRole('option', { name: /high/i }).click()
+    // Cost range is implemented as pill buttons
+    const costFilter = page.getByTestId(S.inventory.costFilter)
+    await costFilter.getByText('$500+').click()
 
     const rows = page.getByTestId(S.inventory.vendorRow)
     const count = await rows.count()
-    // Only vendors with cost > $500 (Slack $875, Figma $540, Zoom $450? depends on threshold)
+    // Only vendors with cost > $500
     expect(count).toBeGreaterThan(0)
   })
 

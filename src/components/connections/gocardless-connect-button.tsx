@@ -151,7 +151,7 @@ export function GoCardlessConnectButton({ onSuccess }: { onSuccess?: () => void 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="group/btn gap-2">
+          <Button variant="outline" data-testid="gocardless-connect-button" className="group/btn gap-2">
             Connect EU Bank
             <ArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 group-hover/btn:translate-x-0 group-hover/btn:opacity-100 transition-all" />
           </Button>

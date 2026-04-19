@@ -32,6 +32,12 @@ export interface DevApi {
     totalUsers?: number
     inactiveRatio?: number
   }): Promise<void>
+  simulateGoCardless(opts?: {
+    institutionName?: string
+    country?: string
+    status?: string
+  }): Promise<void>
+  setSubscriptionStatus(status: 'active' | 'past_due' | 'canceled'): Promise<void>
   runCron(job: CronJob): Promise<void>
   getState(): Promise<Record<string, unknown>>
 }
@@ -122,6 +128,18 @@ export const test = authTest.extend<DevToolsFixtures>({
         await callDevApi(request, url, token, {
           action: 'simulate-okta',
           ...opts,
+        })
+      },
+      async simulateGoCardless(opts = {}) {
+        await callDevApi(request, url, token, {
+          action: 'simulate-gocardless',
+          ...opts,
+        })
+      },
+      async setSubscriptionStatus(status) {
+        await callDevApi(request, url, token, {
+          action: 'set-subscription-status',
+          status,
         })
       },
       async runCron(job) {

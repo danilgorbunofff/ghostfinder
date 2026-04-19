@@ -189,7 +189,7 @@ export function VendorTable({ vendors, totalSpend, onVendorClick }: VendorTableP
             <TableCell>
               <div className="text-right">
                 <span className="font-semibold tabular-nums">
-                  {vendor.monthlyCost > 0 ? `$${vendor.monthlyCost.toLocaleString()}` : '—'}
+                  {vendor.monthlyCost > 0 ? `$${vendor.monthlyCost.toLocaleString()}/mo` : '—'}
                 </span>
                 {vendor.monthlyCost > 0 && totalSpend > 0 && (
                   <div className="mt-1.5 h-2 w-full max-w-[80px] rounded-full bg-muted/80 ml-auto overflow-hidden">

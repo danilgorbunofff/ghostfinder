@@ -1,9 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Package } from 'lucide-react'
-import { PlaidLinkButton } from '@/components/connections/plaid-link-button'
 import { InventoryView } from './inventory-view'
 import { InventoryStats } from '@/components/dashboard/inventory-stats'
+import { getServerOrgContext } from '@/lib/supabase/server-org'
 import type { VendorRow } from '@/lib/types'
 import type { Metadata } from 'next'
 
@@ -32,40 +31,31 @@ function vendorStatus(isActive: boolean, lastActivityAt: string | null): 'active
 }
 
 export default async function InventoryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: membership } = await supabase
-    .from('org_members')
-    .select('org_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-
-  const orgId = membership?.org_id
+  const { admin, orgId } = await getServerOrgContext()
 
   let vendors: VendorRow[] = []
   let totalSpend = 0
 
-  if (orgId) {
-    const { data: saasVendors } = await supabase
-      .from('saas_vendors')
-      .select('name, monthly_cost, seats_paid, last_seen, is_active, category')
-      .eq('org_id', orgId)
-      .order('monthly_cost', { ascending: false })
+  const { data: saasVendors, error } = await admin
+    .from('saas_vendors')
+    .select('name, monthly_cost, seats_paid, last_seen, is_active, category')
+    .eq('org_id', orgId)
+    .order('monthly_cost', { ascending: false })
 
-    vendors = (saasVendors ?? []).map((v) => ({
-      name: v.name,
-      monthlyCost: Number(v.monthly_cost ?? 0),
-      seats: v.seats_paid ?? 0,
-      lastActivity: formatLastActivity(v.last_seen),
-      status: vendorStatus(v.is_active, v.last_seen),
-      category: v.category ?? null,
-    }))
-
-    totalSpend = vendors.reduce((sum, v) => sum + v.monthlyCost, 0)
+  if (error) {
+    throw new Error(`Failed to load vendors: ${error.message}`)
   }
+
+  vendors = (saasVendors ?? []).map((v) => ({
+    name: v.name,
+    monthlyCost: Number(v.monthly_cost ?? 0),
+    seats: v.seats_paid ?? 0,
+    lastActivity: formatLastActivity(v.last_seen),
+    status: vendorStatus(v.is_active, v.last_seen),
+    category: v.category ?? null,
+  }))
+
+  totalSpend = vendors.reduce((sum, v) => sum + v.monthlyCost, 0)
 
   const activeVendors = vendors.filter(v => v.status === 'active').length
   const avgCost = vendors.length > 0 ? Math.round(totalSpend / vendors.length) : 0
@@ -85,9 +75,14 @@ export default async function InventoryPage() {
           </div>
           <h3 className="text-lg font-semibold mb-1">No SaaS vendors detected yet</h3>
           <p className="text-sm text-muted-foreground text-center max-w-sm mb-6">
-            Connect a bank account to automatically discover your software subscriptions and their costs.
+            Connect a data source to automatically discover your software subscriptions and their costs.
           </p>
-          <PlaidLinkButton />
+          <Link
+            href="/connections"
+            className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm hover:bg-brand-hover transition-colors"
+          >
+            Connect a data source
+          </Link>
         </div>
       </div>
     )

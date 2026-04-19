@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { X, ExternalLink, DollarSign, Users, Clock, Tag } from 'lucide-react'
@@ -46,6 +47,9 @@ interface VendorDrawerProps {
 
 export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   // Escape key
   useEffect(() => {
@@ -66,7 +70,9 @@ export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps)
 
   const isOpen = vendor !== null
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -93,7 +99,7 @@ export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps)
           <div className="p-6 space-y-6 animate-fade-in-up">
             {/* Close button */}
             <div className="flex justify-end">
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" onClick={onClose} data-testid="drawer-close" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -175,7 +181,7 @@ export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps)
 
             {/* Action */}
             <div className="pt-2 border-t">
-              <Button variant="outline" className="w-full gap-2">
+              <Button variant="outline" className="w-full gap-2" disabled title="Coming soon">
                 <ExternalLink className="h-4 w-4" />
                 View Vendor Details
               </Button>
@@ -183,7 +189,8 @@ export function VendorDrawer({ vendor, totalSpend, onClose }: VendorDrawerProps)
           </div>
         )}
       </div>
-    </>
+    </>,
+    document.body
   )
 }
 

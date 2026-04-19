@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function PATCH(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
   const { displayName } = await request.json()
 
-  if (typeof displayName !== 'string' || displayName.length > 100) {
+  if (typeof displayName !== 'string' || displayName.trim().length === 0 || displayName.length > 100) {
     return NextResponse.json({ error: 'Invalid display name' }, { status: 400 })
   }
 

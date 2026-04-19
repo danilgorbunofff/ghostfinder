@@ -28,7 +28,7 @@ export function DevDataTab() {
             disabled={loading === 'seed-data'}
             onClick={async () => {
               const r = await run({ action: 'seed-data' })
-              if (r) toast.success(r.message)
+              if (r) toast.success(r.message ?? 'Demo data seeded')
             }}
           >
             {loading === 'seed-data' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Database className="h-3 w-3" />}
@@ -42,7 +42,7 @@ export function DevDataTab() {
               disabled={loading === 'generate-transactions'}
               onClick={async () => {
                 const r = await run({ action: 'generate-transactions', count: txnCount })
-                if (r) toast.success(r.message)
+                if (r) toast.success(r.message ?? `Generated ${txnCount} transactions`)
               }}
             >
               {loading === 'generate-transactions' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Shuffle className="h-3 w-3" />}
@@ -71,7 +71,7 @@ export function DevDataTab() {
             onClick={async () => {
               if (!confirm('Delete ALL project data? This clears every bank connection, integration, transaction, vendor, and usage record and resets the subscription to free. This cannot be undone.')) return
               const r = await run({ action: 'reset-data' })
-              if (r) toast.success(r.message)
+              if (r) toast.success(r.message ?? 'Project data cleared')
             }}
           >
             {loading === 'reset-data' ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
@@ -93,7 +93,7 @@ export function DevDataTab() {
               onClick={async () => {
                 const table = (document.getElementById('reset-table') as HTMLSelectElement).value
                 const r = await run({ action: 'reset-table', table })
-                if (r) toast.success(r.message)
+                if (r) toast.success(r.message ?? `Cleared ${table}`)
               }}
             >
               Clear
